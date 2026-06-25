@@ -571,7 +571,7 @@
       const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js");
       const { getFirestore, collection, getDocs, getDoc, doc } = await import("https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js");
       const app = initializeApp({apiKey:"AIzaSyALTT3yHyEEOoD5jPoe4dkSNC2VJ2Mw3rI",authDomain:"barthon-watch.firebaseapp.com",projectId:"barthon-watch",storageBucket:"barthon-watch.firebasestorage.app",messagingSenderId:"324106141927",appId:"1:324106141927:web:e69561d4115b7faf3de242"});
-      const db = getFirestore(app);
+      const db = getFirestore(app, 'barthon');
       const [wSnap,cSnap] = await Promise.all([getDocs(collection(db,'watches')), getDoc(doc(db,'site','copy'))]);
       const pub=[];
       wSnap.forEach(d=>{ const w=d.data(); if(w.status==="published") pub.push(w); });
