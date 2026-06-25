@@ -458,9 +458,10 @@ class Component extends DCLogic {
   }
   componentDidMount(){ this._load(); }
   async _load(){
-    const db = window.__db;
-    const { collection, doc, setDoc, getDocs, getDoc } = window.__fs;
     try {
+      if(!window.__db || !window.__fs){ throw new Error('Firebase not initialized'); }
+      const db = window.__db;
+      const { collection, doc, setDoc, getDocs, getDoc } = window.__fs;
       const [wSnap, iSnap, cSnap] = await Promise.all([
         getDocs(collection(db,'watches')),
         getDocs(collection(db,'inquiries')),
@@ -502,66 +503,66 @@ class Component extends DCLogic {
   save = async ()=>{
     const ed=this.state.editing;
     if(!ed.brand||!ed.name){ this.toastMsg("請填寫品牌與型號名稱"); return; }
-    const { doc, setDoc } = window.__fs;
     const id = this.state.editingId || ("w"+Date.now());
     const data = {...ed, id};
     try {
+      const { doc, setDoc } = window.__fs;
       await setDoc(doc(window.__db,'watches',id), data);
       this.setState(s=>({
         watches: s.editingId ? s.watches.map(w=>w.id===s.editingId?data:w) : [data,...s.watches],
         editing:null, editingId:null
       }));
       this.toastMsg("已儲存");
-    } catch(e){ this.toastMsg("儲存失敗"); }
+    } catch(e){ console.error('save failed',e); this.toastMsg("儲存失敗："+((e&&e.code)||e)); }
   };
   removeWatch = async (e)=>{
     e.stopPropagation();
     const id=e.currentTarget.dataset.key;
-    const { doc, deleteDoc } = window.__fs;
     try {
+      const { doc, deleteDoc } = window.__fs;
       await deleteDoc(doc(window.__db,'watches',id));
       this.setState(s=>({watches:s.watches.filter(w=>w.id!==id)}));
       this.toastMsg("已刪除");
-    } catch(e){ this.toastMsg("刪除失敗"); }
+    } catch(e){ console.error('removeWatch failed',e); this.toastMsg("刪除失敗"); }
   };
   togglePublish = async (e)=>{
     e.stopPropagation();
     const id=e.currentTarget.dataset.key;
     const w=this.state.watches.find(x=>x.id===id); if(!w) return;
     const status=w.status==="published"?"draft":"published";
-    const { doc, updateDoc } = window.__fs;
     try {
+      const { doc, updateDoc } = window.__fs;
       await updateDoc(doc(window.__db,'watches',id),{status});
       this.setState(s=>({watches:s.watches.map(x=>x.id===id?{...x,status}:x)}));
-    } catch(e){ this.toastMsg("更新失敗"); }
+    } catch(e){ console.error('togglePublish failed',e); this.toastMsg("更新失敗"); }
   };
 
   setSearch = (e)=> this.setState({search:e.target.value});
   setStatusFilter = (e)=> this.setState({statusFilter:e.currentTarget.dataset.val});
   setInqStatus = async (e)=>{
     const id=e.currentTarget.dataset.key, v=e.target.value;
-    const { doc, updateDoc } = window.__fs;
     try {
+      const { doc, updateDoc } = window.__fs;
       await updateDoc(doc(window.__db,'inquiries',id),{status:v});
       this.setState(s=>({inquiries:s.inquiries.map(q=>q.id===id?{...q,status:v}:q)}));
-    } catch(e){}
+    } catch(e){ console.error('setInqStatus failed',e); }
   };
   removeInq = async (e)=>{
     const id=e.currentTarget.dataset.key;
-    const { doc, deleteDoc } = window.__fs;
     try {
+      const { doc, deleteDoc } = window.__fs;
       await deleteDoc(doc(window.__db,'inquiries',id));
       this.setState(s=>({inquiries:s.inquiries.filter(q=>q.id!==id)}));
       this.toastMsg("已刪除");
-    } catch(e){ this.toastMsg("刪除失敗"); }
+    } catch(e){ console.error('removeInq failed',e); this.toastMsg("刪除失敗"); }
   };
   onCopy = (e)=>{ const n=e.target.name, v=e.target.value; this.setState(s=>({copy:{...s.copy,[n]:v}})); };
   saveCopy = async ()=>{
-    const { doc, setDoc } = window.__fs;
     try {
+      const { doc, setDoc } = window.__fs;
       await setDoc(doc(window.__db,'site','copy'), this.state.copy);
       this.toastMsg("文案已儲存");
-    } catch(e){ this.toastMsg("儲存失敗"); }
+    } catch(e){ console.error('saveCopy failed',e); this.toastMsg("儲存失敗"); }
   };
 
   condText(w){
