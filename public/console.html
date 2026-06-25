@@ -9,6 +9,8 @@
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut }
                             from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
+import { getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, getDocs, getDoc }
+                            from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyALTT3yHyEEOoD5jPoe4dkSNC2VJ2Mw3rI",
@@ -20,6 +22,9 @@ const firebaseConfig = {
 };
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db   = getFirestore(app);
+window.__db = db;
+window.__fs = { collection, doc, setDoc, updateDoc, deleteDoc, getDocs, getDoc };
 
 onAuthStateChanged(auth, user => {
   if (!user) {
@@ -442,22 +447,35 @@ class Component extends DCLogic {
 
   constructor(props){
     super(props);
-    let saved = null;
-    try { saved = JSON.parse(localStorage.getItem("barthon_admin_v1")); } catch(e){}
+    let layoutMode = "sidebar";
+    try { const s = JSON.parse(localStorage.getItem(this.KEY)); if(s?.layoutMode) layoutMode = s.layoutMode; } catch(e){}
     this.state = {
-      layoutMode: (saved && saved.layoutMode) || "sidebar",
-      section: "dashboard",
-      watches: (saved && saved.watches) || this.DEFW,
-      inquiries: (saved && saved.inquiries) || this.DEFQ,
-      copy: (saved && saved.copy) || this.DEFC,
+      layoutMode, section: "dashboard",
+      watches: [], inquiries: [], copy: this.DEFC,
       editing: null, editingId: null,
-      search: "", statusFilter: "all", toast: null
+      search: "", statusFilter: "all", toast: null, loading: true
     };
   }
-  persist(){
-    const {watches,inquiries,copy,layoutMode} = this.state;
-    try{ localStorage.setItem(this.KEY, JSON.stringify({watches,inquiries,copy,layoutMode})); }catch(e){}
+  componentDidMount(){ this._load(); }
+  async _load(){
+    const db = window.__db;
+    const { collection, doc, setDoc, getDocs, getDoc } = window.__fs;
+    try {
+      const [wSnap, iSnap, cSnap] = await Promise.all([
+        getDocs(collection(db,'watches')),
+        getDocs(collection(db,'inquiries')),
+        getDoc(doc(db,'site','copy'))
+      ]);
+      let watches=[]; wSnap.forEach(d=>watches.push({id:d.id,...d.data()}));
+      let inquiries=[]; iSnap.forEach(d=>inquiries.push({id:d.id,...d.data()}));
+      const copy = cSnap.exists() ? cSnap.data() : this.DEFC;
+      if(!watches.length){ for(const w of this.DEFW){ await setDoc(doc(db,'watches',w.id),w); } watches=[...this.DEFW]; }
+      if(!inquiries.length){ for(const q of this.DEFQ){ await setDoc(doc(db,'inquiries',q.id),q); } inquiries=[...this.DEFQ]; }
+      if(!cSnap.exists()) await setDoc(doc(db,'site','copy'), this.DEFC);
+      this.setState({watches, inquiries, copy, loading:false});
+    } catch(e){ console.error(e); this.setState({loading:false}); }
   }
+  persist(){ try{ localStorage.setItem(this.KEY, JSON.stringify({layoutMode:this.state.layoutMode})); }catch(e){} }
   toastMsg(m){ this.setState({toast:m}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:null}),1900); }
   blank(){ return {brand:"",name:"",cat:"運動",price:"NT$ 詢問",badge:"",condition:"二手",pct:"99新",set:{box:true,card:true,manual:false,strap:false},warranty:"",origin:"",ref:"",year:"",movement:"",size:"",material:"",water:"",accessories:"",desc:"",images:[],status:"published"}; }
 
@@ -481,31 +499,69 @@ class Component extends DCLogic {
   removeImage = (e)=>{ const i=+e.currentTarget.dataset.idx; this.setState(s=>({editing:{...s.editing,images:s.editing.images.filter((_,k)=>k!==i)}})); };
   setCover = (e)=>{ const i=+e.currentTarget.dataset.idx; this.setState(s=>{ const a=[...s.editing.images]; const [m]=a.splice(i,1); a.unshift(m); return {editing:{...s.editing,images:a}}; }); };
 
-  save = ()=>{
+  save = async ()=>{
     const ed=this.state.editing;
-    if(!ed.brand || !ed.name){ this.toastMsg("請填寫品牌與型號名稱"); return; }
-    this.setState(s=>{
-      let watches;
-      if(s.editingId){ watches=s.watches.map(w=>w.id===s.editingId?{...ed,id:s.editingId}:w); }
-      else { watches=[{...ed,id:"w"+Date.now()}, ...s.watches]; }
-      return {watches, editing:null, editingId:null};
-    }, ()=>{ this.persist(); this.toastMsg("已儲存"); });
+    if(!ed.brand||!ed.name){ this.toastMsg("請填寫品牌與型號名稱"); return; }
+    const { doc, setDoc } = window.__fs;
+    const id = this.state.editingId || ("w"+Date.now());
+    const data = {...ed, id};
+    try {
+      await setDoc(doc(window.__db,'watches',id), data);
+      this.setState(s=>({
+        watches: s.editingId ? s.watches.map(w=>w.id===s.editingId?data:w) : [data,...s.watches],
+        editing:null, editingId:null
+      }));
+      this.toastMsg("已儲存");
+    } catch(e){ this.toastMsg("儲存失敗"); }
   };
-  removeWatch = (e)=>{ e.stopPropagation(); const id=e.currentTarget.dataset.key; this.setState(s=>({watches:s.watches.filter(w=>w.id!==id)}), ()=>{ this.persist(); this.toastMsg("已刪除"); }); };
-  togglePublish = (e)=>{ e.stopPropagation(); const id=e.currentTarget.dataset.key; this.setState(s=>({watches:s.watches.map(w=>w.id===id?{...w,status:w.status==="published"?"draft":"published"}:w)}), ()=>this.persist()); };
+  removeWatch = async (e)=>{
+    e.stopPropagation();
+    const id=e.currentTarget.dataset.key;
+    const { doc, deleteDoc } = window.__fs;
+    try {
+      await deleteDoc(doc(window.__db,'watches',id));
+      this.setState(s=>({watches:s.watches.filter(w=>w.id!==id)}));
+      this.toastMsg("已刪除");
+    } catch(e){ this.toastMsg("刪除失敗"); }
+  };
+  togglePublish = async (e)=>{
+    e.stopPropagation();
+    const id=e.currentTarget.dataset.key;
+    const w=this.state.watches.find(x=>x.id===id); if(!w) return;
+    const status=w.status==="published"?"draft":"published";
+    const { doc, updateDoc } = window.__fs;
+    try {
+      await updateDoc(doc(window.__db,'watches',id),{status});
+      this.setState(s=>({watches:s.watches.map(x=>x.id===id?{...x,status}:x)}));
+    } catch(e){ this.toastMsg("更新失敗"); }
+  };
 
   setSearch = (e)=> this.setState({search:e.target.value});
   setStatusFilter = (e)=> this.setState({statusFilter:e.currentTarget.dataset.val});
-  setInqStatus = (e)=>{ const id=e.currentTarget.dataset.key, v=e.target.value; this.setState(s=>({inquiries:s.inquiries.map(q=>q.id===id?{...q,status:v}:q)}), ()=>this.persist()); };
-  removeInq = (e)=>{ const id=e.currentTarget.dataset.key; this.setState(s=>({inquiries:s.inquiries.filter(q=>q.id!==id)}), ()=>{ this.persist(); this.toastMsg("已刪除"); }); };
+  setInqStatus = async (e)=>{
+    const id=e.currentTarget.dataset.key, v=e.target.value;
+    const { doc, updateDoc } = window.__fs;
+    try {
+      await updateDoc(doc(window.__db,'inquiries',id),{status:v});
+      this.setState(s=>({inquiries:s.inquiries.map(q=>q.id===id?{...q,status:v}:q)}));
+    } catch(e){}
+  };
+  removeInq = async (e)=>{
+    const id=e.currentTarget.dataset.key;
+    const { doc, deleteDoc } = window.__fs;
+    try {
+      await deleteDoc(doc(window.__db,'inquiries',id));
+      this.setState(s=>({inquiries:s.inquiries.filter(q=>q.id!==id)}));
+      this.toastMsg("已刪除");
+    } catch(e){ this.toastMsg("刪除失敗"); }
+  };
   onCopy = (e)=>{ const n=e.target.name, v=e.target.value; this.setState(s=>({copy:{...s.copy,[n]:v}})); };
-  saveCopy = ()=>{ this.persist(); this.toastMsg("文案已儲存"); };
-  exportData = ()=>{
-    const payload={ watches:this.state.watches, copy:this.state.copy };
-    const js="window.BARTHON_DATA = "+JSON.stringify(payload,null,2)+";\n";
-    const blob=new Blob([js],{type:"text/javascript"});
-    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="data.js"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-    this.toastMsg("已匯出 data.js — 放進 public/ 再部署");
+  saveCopy = async ()=>{
+    const { doc, setDoc } = window.__fs;
+    try {
+      await setDoc(doc(window.__db,'site','copy'), this.state.copy);
+      this.toastMsg("文案已儲存");
+    } catch(e){ this.toastMsg("儲存失敗"); }
   };
 
   condText(w){
@@ -574,7 +630,8 @@ class Component extends DCLogic {
       watchList:list, watchCount:s.watches.length, watchEmpty:list.length===0,
       search:s.search, setSearch:this.setSearch, statusChips, setStatusFilter:this.setStatusFilter,
       togglePublish:this.togglePublish, removeWatch:this.removeWatch,
-      copy:s.copy, onCopy:this.onCopy, saveCopy:this.saveCopy, exportData:this.exportData,
+      loading:s.loading,
+      copy:s.copy, onCopy:this.onCopy, saveCopy:this.saveCopy,
       publishedList:pub.map(toView), publishedCount:pub.length, noPublished:pub.length===0,
       setInqStatus:this.setInqStatus, removeInq:this.removeInq,
       hasEditing:!!s.editing, drawerTitle:s.editingId?"編輯腕錶":"新增腕錶",

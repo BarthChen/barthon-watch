@@ -553,37 +553,41 @@
      size:"40mm", material:"不鏽鋼", water:"30m", accessories:"原廠盒、保卡",
      desc:"萬國 Portofino 簡潔大三針,白面藍鋼指針,正裝經典。錶況良好,功能正常。"},
   ];
-  // ---- 接上「BarthON 後台」資料:已上架腕錶與文案會直接顯示在前台 ----
-  (function loadAdmin(){
-    let saved=null;
-    try{ saved=JSON.parse(localStorage.getItem("barthon_admin_v1")); }catch(e){}
-    if((!saved||!saved.watches||!saved.watches.length) && window.BARTHON_DATA) saved=window.BARTHON_DATA;
-    if(!saved) return;
-    if(saved.watches){
-      const pub=saved.watches.filter(w=>w.status==="published");
+  // ---- 從 Firebase Firestore 載入已上架腕錶與文案 ----
+  function _applyCopy(c){ try{
+    if(c.heroLead){ const el=document.querySelector(".hero p.lead"); if(el) el.textContent=c.heroLead; }
+    if(c.heroTitle){ const h=document.querySelector(".hero h1"); if(h){ const en=h.querySelector(".en"); h.innerHTML=c.heroTitle.split(/\s+/).join("<br>")+(en?en.outerHTML:""); } }
+    if(c.aboutText){ const ap=document.querySelector("#about .about-grid p"); if(ap) ap.textContent=c.aboutText; }
+    const map={"fb-marketplace":c.fbUrl,"messenger":c.fbUrl,"instagram":c.igUrl};
+    document.querySelectorAll("[data-link]").forEach(a=>{
+      const k=a.getAttribute("data-link");
+      if(map[k]) a.setAttribute("href",map[k]);
+      if(k==="phone"&&c.phone) a.setAttribute("href","tel:"+c.phone.replace(/[^0-9+]/g,""));
+      if(k==="line"&&c.lineId) a.setAttribute("href","https://line.me/R/ti/p/@"+c.lineId.replace(/^@/,""));
+    });
+  }catch(e){} }
+  (async function loadFromFirestore(){
+    try {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js");
+      const { getFirestore, collection, getDocs, getDoc, doc } = await import("https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js");
+      const app = initializeApp({apiKey:"AIzaSyALTT3yHyEEOoD5jPoe4dkSNC2VJ2Mw3rI",authDomain:"barthon-watch.firebaseapp.com",projectId:"barthon-watch",storageBucket:"barthon-watch.firebasestorage.app",messagingSenderId:"324106141927",appId:"1:324106141927:web:e69561d4115b7faf3de242"});
+      const db = getFirestore(app);
+      const [wSnap,cSnap] = await Promise.all([getDocs(collection(db,'watches')), getDoc(doc(db,'site','copy'))]);
+      const pub=[];
+      wSnap.forEach(d=>{ const w=d.data(); if(w.status==="published") pub.push(w); });
       if(pub.length){
         WATCHES.length=0;
         pub.forEach(w=>{
           const set=w.set||{};
-          const cond = w.condition==="全新" ? "全新" : ((set.box&&set.card)?((w.pct||"")+"・全套"):(w.pct||""));
-          const meta = [w.year, cond].filter(Boolean).join("・") || "現貨";
-          WATCHES.push({id:w.id,brand:w.brand,name:w.name,cat:w.cat,badge:w.badge||"",price:w.price,meta:meta,ref:w.ref,year:w.year,movement:w.movement,size:w.size,material:w.material,water:w.water,accessories:w.accessories,desc:w.desc,imgs:w.images||[]});
+          const cond=w.condition==="全新"?"全新":((set.box&&set.card)?((w.pct||"")+"・全套"):(w.pct||""));
+          const meta=[w.year,cond].filter(Boolean).join("・")||"現貨";
+          WATCHES.push({id:w.id,brand:w.brand,name:w.name,cat:w.cat,badge:w.badge||"",price:w.price,meta,ref:w.ref,year:w.year,movement:w.movement,size:w.size,material:w.material,water:w.water,accessories:w.accessories,desc:w.desc,imgs:w.images||[]});
         });
       }
-    }
-    const c=saved.copy;
-    if(c){ try{
-      if(c.heroLead){ const el=document.querySelector(".hero p.lead"); if(el) el.textContent=c.heroLead; }
-      if(c.heroTitle){ const h=document.querySelector(".hero h1"); if(h){ const en=h.querySelector(".en"); h.innerHTML=c.heroTitle.split(/\s+/).join("<br>")+(en?en.outerHTML:""); } }
-      if(c.aboutText){ const ap=document.querySelector("#about .about-grid p"); if(ap) ap.textContent=c.aboutText; }
-      const map={"fb-marketplace":c.fbUrl,"messenger":c.fbUrl,"instagram":c.igUrl};
-      document.querySelectorAll("[data-link]").forEach(a=>{
-        const k=a.getAttribute("data-link");
-        if(map[k]) a.setAttribute("href",map[k]);
-        if(k==="phone"&&c.phone) a.setAttribute("href","tel:"+c.phone.replace(/[^0-9+]/g,""));
-        if(k==="line"&&c.lineId) a.setAttribute("href","https://line.me/R/ti/p/@"+c.lineId.replace(/^@/,""));
-      });
-    }catch(e){} }
+      if(cSnap.exists()) _applyCopy(cSnap.data());
+      BRANDS.length=0; BRANDS.push("全部",...Array.from(new Set(WATCHES.map(w=>w.brand))));
+      renderFilters(); renderGrid();
+    } catch(e){ console.warn("Firestore load failed:",e); }
   })();
 
   const CATS = ["全部","運動","正裝","古董","潮流"];
