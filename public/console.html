@@ -71,7 +71,6 @@ onAuthStateChanged(auth, user => {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:#0d0e10;font-family:"Noto Sans TC",sans-serif;-webkit-font-smoothing:antialiased}
@@ -94,12 +93,11 @@ onAuthStateChanged(auth, user => {
         <div style="font-size:10px;letter-spacing:.34em;color:#7c7c84;text-transform:uppercase;margin-top:4px">後台管理 ・ Console</div>
       </div>
       <nav style="flex:1;padding:16px 14px;display:flex;flex-direction:column;gap:4px">
-        <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="5">
-          <button data-key="{{ item.key }}" onClick="{{ go }}" style="{{ item.style }}">
-            <i data-lucide="{{ item.icon }}" style="width:18px;height:18px;flex:none"></i>
-            <span>{{ item.label }}</span>
-          </button>
-        </sc-for>
+        <button data-key="dashboard" onClick="{{ go }}" style="{{ navDash.style }}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="14" rx="1"/></svg><span>儀表板</span></button>
+        <button data-key="watches" onClick="{{ go }}" style="{{ navWatch.style }}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="6"/><polyline points="12 10 12 12 13 13"/><path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 3.96"/><path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05"/></svg><span>腕錶管理</span></button>
+        <button data-key="inquiries" onClick="{{ go }}" style="{{ navInq.style }}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>詢問訊息</span></button>
+        <button data-key="copy" onClick="{{ go }}" style="{{ navCopy.style }}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg><span>網站文案</span></button>
+        <button data-key="preview" onClick="{{ go }}" style="{{ navPrev.style }}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><span>前台預覽</span></button>
       </nav>
       <div style="padding:16px 18px;border-top:1px solid rgba(255,255,255,.06)">
         <div style="font-size:10px;letter-spacing:.2em;color:#5e5e66;text-transform:uppercase;margin-bottom:9px">版面</div>
@@ -117,12 +115,11 @@ onAuthStateChanged(auth, user => {
     <header style="position:fixed;left:0;right:0;top:0;height:60px;background:#16171a;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:28px;padding:0 28px;z-index:30">
       <div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;letter-spacing:.04em;color:#ececee;flex:none">Barth<span style="color:#c8a667">ON</span> <span style="font-size:11px;color:#7c7c84;letter-spacing:.2em">後台</span></div>
       <nav style="display:flex;gap:4px;flex:1;height:100%;align-items:stretch">
-        <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="5">
-          <button data-key="{{ item.key }}" onClick="{{ go }}" style="{{ item.tabStyle }}">
-            <i data-lucide="{{ item.icon }}" style="width:16px;height:16px"></i>
-            <span>{{ item.label }}</span>
-          </button>
-        </sc-for>
+        <button data-key="dashboard" onClick="{{ go }}" style="{{ navDash.tabStyle }}"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="14" rx="1"/></svg><span>儀表板</span></button>
+        <button data-key="watches" onClick="{{ go }}" style="{{ navWatch.tabStyle }}"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="6"/><polyline points="12 10 12 12 13 13"/><path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 3.96"/><path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05"/></svg><span>腕錶管理</span></button>
+        <button data-key="inquiries" onClick="{{ go }}" style="{{ navInq.tabStyle }}"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>詢問訊息</span></button>
+        <button data-key="copy" onClick="{{ go }}" style="{{ navCopy.tabStyle }}"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg><span>網站文案</span></button>
+        <button data-key="preview" onClick="{{ go }}" style="{{ navPrev.tabStyle }}"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><span>前台預覽</span></button>
       </nav>
       <div style="display:flex;gap:4px;padding:4px;background:#0d0e10;border:1px solid rgba(255,255,255,.08);border-radius:8px;flex:none">
         <button data-val="sidebar" onClick="{{ setLayout }}" style="{{ swSideStyle }}">側欄</button>
@@ -142,7 +139,7 @@ onAuthStateChanged(auth, user => {
               <h1 style="font-size:26px;font-weight:500;color:#ececee">儀表板</h1>
               <p style="font-size:14px;color:#7c7c84;margin-top:4px">總覽你的庫存與待辦詢問</p>
             </div>
-            <button onClick="{{ openNew }}" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border:0;border-radius:8px;background:#c8a667;color:#15151a;font-size:14px;font-weight:600;cursor:pointer"><i data-lucide="plus" style="width:17px;height:17px"></i>新增腕錶</button>
+            <button onClick="{{ openNew }}" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border:0;border-radius:8px;background:#c8a667;color:#15151a;font-size:14px;font-weight:600;cursor:pointer"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>新增腕錶</button>
           </div>
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:30px">
             <sc-for list="{{ statCards }}" as="c" hint-placeholder-count="4">
@@ -180,11 +177,11 @@ onAuthStateChanged(auth, user => {
               <h1 style="font-size:26px;font-weight:500;color:#ececee">腕錶管理</h1>
               <p style="font-size:14px;color:#7c7c84;margin-top:4px">共 {{ watchCount }} 件・點選任一列即可編輯</p>
             </div>
-            <button onClick="{{ openNew }}" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border:0;border-radius:8px;background:#c8a667;color:#15151a;font-size:14px;font-weight:600;cursor:pointer"><i data-lucide="plus" style="width:17px;height:17px"></i>新增腕錶</button>
+            <button onClick="{{ openNew }}" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border:0;border-radius:8px;background:#c8a667;color:#15151a;font-size:14px;font-weight:600;cursor:pointer"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>新增腕錶</button>
           </div>
           <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap">
             <div style="position:relative;flex:1;min-width:220px">
-              <i data-lucide="search" style="width:16px;height:16px;color:#7c7c84;position:absolute;left:13px;top:50%;transform:translateY(-50%)"></i>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c7c84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:13px;top:50%;transform:translateY(-50%)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
               <input value="{{ search }}" onInput="{{ setSearch }}" placeholder="搜尋品牌或型號…" style="width:100%;background:#16171a;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px 10px 38px;font-size:14px">
             </div>
             <div style="display:flex;gap:6px">
@@ -198,7 +195,7 @@ onAuthStateChanged(auth, user => {
               <div data-key="{{ w.id }}" onClick="{{ openEdit }}" style="display:flex;align-items:center;gap:16px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer">
                 <div style="width:54px;height:54px;border-radius:8px;flex:none;background:#0d0e10;border:1px solid rgba(255,255,255,.08);overflow:hidden;display:grid;place-items:center">
                   <sc-if value="{{ w.hasCover }}" hint-placeholder-val="{{ false }}"><div style="{{ w.coverStyle }}"></div></sc-if>
-                  <sc-if value="{{ w.noCover }}" hint-placeholder-val="{{ true }}"><i data-lucide="watch" style="width:20px;height:20px;color:#4a4a52"></i></sc-if>
+                  <sc-if value="{{ w.noCover }}" hint-placeholder-val="{{ true }}"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a4a52" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="6"/><polyline points="12 10 12 12 13 13"/><path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 3.96"/><path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05"/></svg></sc-if>
                 </div>
                 <div style="flex:1;min-width:0">
                   <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7c7c84">{{ w.brand }}</div>
@@ -208,7 +205,7 @@ onAuthStateChanged(auth, user => {
                 <div style="flex:none;width:118px"><span style="display:inline-block;white-space:nowrap;font-size:12px;color:#b0b0b6;border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:3px 9px">{{ w.condText }}</span></div>
                 <div style="flex:none;width:84px;text-align:right;white-space:nowrap;font-family:'Cormorant Garamond',serif;font-size:17px;color:#e3c98c">{{ w.price }}</div>
                 <button data-key="{{ w.id }}" onClick="{{ togglePublish }}" style="{{ w.statusStyle }}">{{ w.statusText }}</button>
-                <button data-key="{{ w.id }}" onClick="{{ removeWatch }}" title="刪除" style="width:34px;height:34px;flex:none;display:grid;place-items:center;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:transparent;color:#7c7c84;cursor:pointer"><i data-lucide="trash-2" style="width:15px;height:15px"></i></button>
+                <button data-key="{{ w.id }}" onClick="{{ removeWatch }}" title="刪除" style="width:34px;height:34px;flex:none;display:grid;place-items:center;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:transparent;color:#7c7c84;cursor:pointer"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
               </div>
             </sc-for>
             <sc-if value="{{ watchEmpty }}" hint-placeholder-val="{{ false }}">
@@ -263,7 +260,7 @@ onAuthStateChanged(auth, user => {
               <h1 style="font-size:26px;font-weight:500;color:#ececee">網站文案</h1>
               <p style="font-size:14px;color:#7c7c84;margin-top:4px">編輯首頁主視覺、關於與聯絡資訊</p>
             </div>
-            <button onClick="{{ saveCopy }}" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border:0;border-radius:8px;background:#c8a667;color:#15171a;font-size:14px;font-weight:600;cursor:pointer"><i data-lucide="save" style="width:16px;height:16px"></i>儲存文案</button>
+            <button onClick="{{ saveCopy }}" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border:0;border-radius:8px;background:#c8a667;color:#15171a;font-size:14px;font-weight:600;cursor:pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>儲存文案</button>
           </div>
           <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:26px;display:flex;flex-direction:column;gap:20px;max-width:760px">
             <div>
@@ -293,7 +290,7 @@ onAuthStateChanged(auth, user => {
         <div data-screen-label="前台預覽">
           <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:8px">
             <div><h1 style="font-size:26px;font-weight:500;color:#ececee">前台預覽</h1><p style="font-size:14px;color:#7c7c84;margin-top:4px">已上架的腕錶在前台網站長這樣（{{ publishedCount }} 件）</p></div>
-            <button onClick="{{ exportData }}" title="匯出 data.js,放進 public/ 後部署即可讓網站顯示你的內容" style="display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border:1px solid rgba(200,166,103,.4);border-radius:8px;background:rgba(200,166,103,.12);color:#e3c98c;font-size:14px;cursor:pointer;flex:none"><i data-lucide="download" style="width:16px;height:16px"></i>匯出網站資料</button>
+            <button onClick="{{ exportData }}" title="匯出 data.js,放進 public/ 後部署即可讓網站顯示你的內容" style="display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border:1px solid rgba(200,166,103,.4);border-radius:8px;background:rgba(200,166,103,.12);color:#e3c98c;font-size:14px;cursor:pointer;flex:none"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="3" y2="15"/></svg>匯出網站資料</button>
           </div>
           <div style="background:#0b0b0d;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:34px;margin-top:18px">
             <div style="text-align:center;margin-bottom:30px">
@@ -305,7 +302,7 @@ onAuthStateChanged(auth, user => {
                 <div style="background:#15151a;border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
                   <div style="position:relative;height:200px;background:#1b1b21;overflow:hidden;display:grid;place-items:center;border-bottom:1px solid rgba(255,255,255,.07)">
                     <sc-if value="{{ w.hasCover }}" hint-placeholder-val="{{ false }}"><div style="{{ w.coverStyle }}"></div></sc-if>
-                    <sc-if value="{{ w.noCover }}" hint-placeholder-val="{{ true }}"><i data-lucide="watch" style="width:32px;height:32px;color:#3a3a42"></i></sc-if>
+                    <sc-if value="{{ w.noCover }}" hint-placeholder-val="{{ true }}"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3a3a42" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="6"/><polyline points="12 10 12 12 13 13"/><path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 3.96"/><path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05"/></svg></sc-if>
                     <sc-if value="{{ w.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:12px;left:12px;background:rgba(8,8,10,.78);border:1px solid rgba(200,166,103,.28);font-size:11px;letter-spacing:.1em;color:#e3c98c;padding:5px 11px;white-space:nowrap">{{ w.badge }}</span></sc-if>
                   </div>
                   <div style="padding:18px 20px 20px;display:flex;flex-direction:column;flex:1">
@@ -331,7 +328,7 @@ onAuthStateChanged(auth, user => {
     <aside style="position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);background:#121316;border-left:1px solid rgba(255,255,255,.1);z-index:51;overflow-y:auto;animation:drawerIn .32s cubic-bezier(.22,.61,.36,1)">
       <div style="position:sticky;top:0;background:#121316;border-bottom:1px solid rgba(255,255,255,.08);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;z-index:2">
         <h2 style="font-size:18px;font-weight:500;color:#ececee">{{ drawerTitle }}</h2>
-        <button onClick="{{ closeEdit }}" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:transparent;color:#b0b0b6;cursor:pointer"><i data-lucide="x" style="width:18px;height:18px"></i></button>
+        <button onClick="{{ closeEdit }}" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:transparent;color:#b0b0b6;cursor:pointer"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
       <div style="padding:24px;display:flex;flex-direction:column;gap:22px">
         <div>
@@ -343,12 +340,12 @@ onAuthStateChanged(auth, user => {
                 <sc-if value="{{ img.cover }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:5px;left:5px;background:#c8a667;color:#15151a;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px">封面</span></sc-if>
                 <div style="position:absolute;bottom:0;left:0;right:0;display:flex;background:rgba(8,8,10,.82)">
                   <button data-idx="{{ img.idx }}" onClick="{{ setCover }}" style="flex:1;border:0;background:transparent;color:#c8a667;font-size:11px;padding:5px;cursor:pointer">設封面</button>
-                  <button data-idx="{{ img.idx }}" onClick="{{ removeImage }}" style="flex:none;border:0;border-left:1px solid rgba(255,255,255,.12);background:transparent;color:#e0664d;font-size:11px;padding:5px 9px;cursor:pointer"><i data-lucide="trash-2" style="width:13px;height:13px"></i></button>
+                  <button data-idx="{{ img.idx }}" onClick="{{ removeImage }}" style="flex:none;border:0;border-left:1px solid rgba(255,255,255,.12);background:transparent;color:#e0664d;font-size:11px;padding:5px 9px;cursor:pointer"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
                 </div>
               </div>
             </sc-for>
             <label style="aspect-ratio:1;border:1.5px dashed rgba(255,255,255,.18);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:#7c7c84;background:#0d0e10">
-              <i data-lucide="upload" style="width:20px;height:20px"></i>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
               <span style="font-size:11px">上傳</span>
               <input type="file" accept="image/*" multiple onChange="{{ addImages }}" style="display:none">
             </label>
@@ -457,9 +454,6 @@ class Component extends DCLogic {
       search: "", statusFilter: "all", toast: null
     };
   }
-  componentDidMount(){ this.icons(); }
-  componentDidUpdate(){ this.icons(); }
-  icons(){ if(window.lucide){ try{ window.lucide.createIcons(); }catch(e){} } }
   persist(){
     const {watches,inquiries,copy,layoutMode} = this.state;
     try{ localStorage.setItem(this.KEY, JSON.stringify({watches,inquiries,copy,layoutMode})); }catch(e){}
@@ -571,6 +565,7 @@ class Component extends DCLogic {
     return {
       isSidebar:s.layoutMode==="sidebar", isTopnav:s.layoutMode==="topnav",
       navItems,
+      navDash:navItems[0], navWatch:navItems[1], navInq:navItems[2], navCopy:navItems[3], navPrev:navItems[4],
       swSideStyle:s.layoutMode==="sidebar"?SW_ON:SW_OFF, swTopStyle:s.layoutMode==="topnav"?SW_ON:SW_OFF,
       mainStyle:s.layoutMode==="sidebar"?{marginLeft:"240px"}:{marginTop:"60px"},
       go:this.go, setLayout:this.setLayout, openNew:this.openNew, openEdit:this.openEdit, closeEdit:this.closeEdit,
