@@ -1,0 +1,23 @@
+name: 🔍 Firebase Hosting Preview (PR)
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy Preview Channel
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: barthon-watch
+          # 不設 channelId → 自動建立 PR 預覽網址
+          # PR 留言裡會自動出現預覽連結 🎉
