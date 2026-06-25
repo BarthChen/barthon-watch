@@ -20,9 +20,9 @@ jobs:
           projectId: barthon-watch
           channelId: live
 
-      - name: Deploy Firestore Rules
+      - name: Deploy Firestore & Storage Rules
         run: |
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/sa.json
-          npx --yes firebase-tools@latest deploy --only firestore:rules --project barthon-watch
+          npx --yes firebase-tools@latest deploy --only firestore:rules,storage --project barthon-watch
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa.json
