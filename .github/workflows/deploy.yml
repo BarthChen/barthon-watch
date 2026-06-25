@@ -13,10 +13,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to Firebase Hosting
-        env:
-          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          echo "$SA_JSON" > /tmp/gcp-sa.json
-          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-sa.json
-          npx firebase-tools@latest deploy --only hosting --project barthon-watch --non-interactive
-          rm -f /tmp/gcp-sa.json
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: barthon-watch
+          channelId: live
