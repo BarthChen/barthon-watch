@@ -274,6 +274,19 @@ onAuthStateChanged(auth, user => {
           </div>
           <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:26px;display:flex;flex-direction:column;gap:20px;max-width:760px">
             <div>
+              <label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:10px">主視覺腕錶照片</label>
+              <sc-if value="{{ copy.heroImg }}" hint-placeholder-val="{{ '' }}">
+                <div style="width:100%;height:220px;border-radius:8px;overflow:hidden;margin-bottom:10px;background:#0d0e10;border:1px solid rgba(255,255,255,.08)">
+                  <img src="{{ copy.heroImg }}" style="width:100%;height:100%;object-fit:cover;display:block" alt="主視覺">
+                </div>
+              </sc-if>
+              <label style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:1px dashed rgba(200,166,103,.4);border-radius:8px;background:rgba(200,166,103,.06);color:#e3c98c;font-size:13px;cursor:pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                {{ copy.heroImg ? "更換照片" : "上傳照片" }}
+                <input type="file" accept="image/*" onChange="{{ uploadHeroImg }}" style="display:none">
+              </label>
+            </div>
+            <div>
               <label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:7px">首頁主標題</label>
               <input name="heroTitle" value="{{ copy.heroTitle }}" onInput="{{ onCopy }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:11px 13px;font-size:15px">
             </div>
@@ -448,7 +461,7 @@ class Component extends DCLogic {
     {id:"q2",name:"Linda",contact:"Messenger",watch:"Tudor Black Bay 58 藍水鬼",message:"想問最低能到多少?有附原廠鋼帶嗎?",date:"2026/06/21",status:"處理中"},
     {id:"q3",name:"王小姐",contact:"IG DM",watch:"Cartier Tank Must",message:"這款還有現貨嗎?想當生日禮物,需要包裝。",date:"2026/06/19",status:"已成交"}
   ];
-  DEFC = {heroTitle:"進口腕錶 藏家精選",heroLead:"嚴選海外進口腕錶,從運動到正裝、從現代到古董,每一支皆現貨實拍、正品保證。台灣本島可面交驗錶。",aboutText:"BarthON 鐘錶從一位錶迷的收藏起步。所有腕錶皆親自海外選貨、進口、檢查後才上架,現貨實拍、來源透明。",lineId:"@barthon",phone:"0912-345-678",fbUrl:"https://facebook.com/barthon",igUrl:"https://instagram.com/barthon"};
+  DEFC = {heroImg:"",heroTitle:"進口腕錶 藏家精選",heroLead:"嚴選海外進口腕錶,從運動到正裝、從現代到古董,每一支皆現貨實拍、正品保證。台灣本島可面交驗錶。",aboutText:"BarthON 鐘錶從一位錶迷的收藏起步。所有腕錶皆親自海外選貨、進口、檢查後才上架,現貨實拍、來源透明。",lineId:"@barthon",phone:"0912-345-678",fbUrl:"https://facebook.com/barthon",igUrl:"https://instagram.com/barthon"};
 
   constructor(props){
     super(props);
@@ -578,6 +591,23 @@ class Component extends DCLogic {
       this.toastMsg("文案已儲存");
     } catch(e){ console.error('saveCopy failed',e); this.toastMsg("儲存失敗"); }
   };
+  uploadHeroImg = async (e)=>{
+    const file = e.target.files && e.target.files[0]; if(!file) return;
+    e.target.value="";
+    this.toastMsg("上傳中…");
+    try {
+      const { ref, uploadBytes, getDownloadURL } = window.__storageFs;
+      const path = `site/hero_${Date.now()}_${file.name.replace(/[^\w.-]/g,'_')}`;
+      const r = ref(window.__storage, path);
+      await uploadBytes(r, file);
+      const url = await getDownloadURL(r);
+      const newCopy = {...this.state.copy, heroImg: url};
+      const { doc, setDoc } = window.__fs;
+      await setDoc(doc(window.__db,'site','copy'), newCopy);
+      this.setState({copy: newCopy});
+      this.toastMsg("主視覺照片已上傳");
+    } catch(err){ console.error('uploadHeroImg failed',err); this.toastMsg("上傳失敗"); }
+  };
 
   condText(w){
     if(w.condition==="全新") return "全新";
@@ -646,7 +676,7 @@ class Component extends DCLogic {
       search:s.search, setSearch:this.setSearch, statusChips, setStatusFilter:this.setStatusFilter,
       togglePublish:this.togglePublish, removeWatch:this.removeWatch,
       loading:s.loading,
-      copy:s.copy, onCopy:this.onCopy, saveCopy:this.saveCopy,
+      copy:s.copy, onCopy:this.onCopy, saveCopy:this.saveCopy, uploadHeroImg:this.uploadHeroImg,
       publishedList:pub.map(toView), publishedCount:pub.length, noPublished:pub.length===0,
       setInqStatus:this.setInqStatus, removeInq:this.removeInq,
       hasEditing:!!s.editing, drawerTitle:s.editingId?"編輯腕錶":"新增腕錶",

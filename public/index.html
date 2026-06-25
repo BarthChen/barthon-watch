@@ -555,6 +555,7 @@
   ];
   // ---- 從 Firebase Firestore 載入已上架腕錶與文案 ----
   function _applyCopy(c){ try{
+    if(c.heroImg){ const el=document.querySelector(".hero-figure .photo"); if(el){ el.style.backgroundImage='url("'+c.heroImg+'")'; el.style.backgroundSize='cover'; el.style.backgroundPosition='center'; el.classList.remove('empty'); } }
     if(c.heroLead){ const el=document.querySelector(".hero p.lead"); if(el) el.textContent=c.heroLead; }
     if(c.heroTitle){ const h=document.querySelector(".hero h1"); if(h){ const en=h.querySelector(".en"); h.innerHTML=c.heroTitle.split(/\s+/).join("<br>")+(en?en.outerHTML:""); } }
     if(c.aboutText){ const ap=document.querySelector("#about .about-grid p"); if(ap) ap.textContent=c.aboutText; }
