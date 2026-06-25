@@ -12,10 +12,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
       - name: Deploy to Firebase Hosting
-        run: |
-          echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > /tmp/sa.json
-          npx firebase-tools@latest deploy --only hosting --project barthon-watch --non-interactive
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa.json
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: npx firebase-tools@latest deploy --only hosting --project barthon-watch --non-interactive
