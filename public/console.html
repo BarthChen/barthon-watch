@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Firebase Auth guard — runs before anything else -->
+<script type="module">
+import { initializeApp }   from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+                            from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyALTT3yHyEEOoD5jPoe4dkSNC2VJ2Mw3rI",
+  authDomain:        "barthon-watch.firebaseapp.com",
+  projectId:         "barthon-watch",
+  storageBucket:     "barthon-watch.firebasestorage.app",
+  messagingSenderId: "324106141927",
+  appId:             "1:324106141927:web:e69561d4115b7faf3de242"
+};
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+onAuthStateChanged(auth, user => {
+  if (!user) {
+    window.location.replace("/admin");
+  } else {
+    // Show console, hide gate
+    document.getElementById("auth-gate").style.display  = "none";
+    document.getElementById("console-wrap").style.display = "";
+    // Expose signOut for the logout button
+    window.__logout = () => signOut(auth).then(() => window.location.replace("/admin"));
+    // Show logout button with user email
+    const logoutBtn = document.getElementById("logout-btn");
+    if (logoutBtn) {
+      logoutBtn.style.display = "flex";
+      const emailEl = document.getElementById("logout-email");
+      if (emailEl) emailEl.textContent = user.email;
+    }
+  }
+});
+</script>
+
+<script src="./support.js"></script>
+</head>
+<body>
+
+<!-- Loading / auth gate shown while checking auth state -->
+<div id="auth-gate" style="min-height:100vh;background:#0d0e10;display:flex;align-items:center;justify-content:center">
+  <div style="text-align:center">
+    <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:28px;font-weight:600;letter-spacing:.04em;color:#ececee;margin-bottom:8px">Barth<span style="color:#c8a667">ON</span></div>
+    <div style="font-size:12px;letter-spacing:.3em;color:#5e5e66;text-transform:uppercase">驗證身份中…</div>
+  </div>
+</div>
+
+<!-- Logout button (fixed, outside x-dc so it's always accessible) -->
+<button id="logout-btn"
+  style="display:none;position:fixed;bottom:16px;left:14px;z-index:200;align-items:center;gap:8px;padding:10px 14px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:#0d0e10;color:#7c7c84;font-size:12px;cursor:pointer;width:212px;font-family:'Noto Sans TC',sans-serif;letter-spacing:.02em;transition:background .2s,color .2s"
+  onmouseenter="this.style.background='#16171a';this.style.color='#ececee'"
+  onmouseleave="this.style.background='#0d0e10';this.style.color='#7c7c84'"
+  onclick="window.__logout && window.__logout()">
+  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+  <span style="flex:1;text-align:left">登出</span>
+  <span id="logout-email" style="font-size:10px;color:#5e5e66;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px"></span>
+</button>
+
+<!-- Admin console (hidden until auth passes) -->
+<div id="console-wrap" style="display:none">
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0d0e10;font-family:"Noto Sans TC",sans-serif;-webkit-font-smoothing:antialiased}
+  input,textarea,select,button{font-family:inherit}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:#c8a667 !important}
+  ::selection{background:#c8a667;color:#15151a}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:6px}
+  @keyframes drawerIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+  @keyframes scrimIn{from{opacity:0}to{opacity:1}}
+  @keyframes toastIn{from{opacity:0;transform:transl(-50%,12px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#0d0e10;color:#ececee;font-weight:300;line-height:1.6">
+
+  <sc-if value="{{ isSidebar }}" hint-placeholder-val="{{ true }}">
+    <aside style="position:fixed;left:0;top:0;bottom:0;width:240px;background:#16171a;border-right:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;z-index:30">
+      <div style="padding:24px 22px 20px;border-bottom:1px solid rgba(255,255,255,.06)">
+        <div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:23px;letter-spacing:.04em;color:#ececee">Barth<span style="color:#c8a667">ON</span></div>
+        <div style="font-size:10px;letter-spacing:.34em;color:#7c7c84;text-transform:uppercase;margin-top:4px">後台管理 ・ Console</div>
+      </div>
+      <nav style="flex:1;padding:16px 14px;display:flex;flex-direction:column;gap:4px">
+        <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="5">
+          <button data-key="{{ item.key }}" onClick="{{ go }}" style="{{ item.style }}">
+            <i data-lucide="{{ item.icon }}" style="width:18px;height:18px;flex:none"></i>
+            <span>{{ item.label }}</span>
+          </button>
+        </sc-for>
+      </nav>
+      <div style="padding:16px 18px;border-top:1px solid rgba(255,255,255,.06)">
+        <div style="font-size:10px;letter-spacing:.2em;color:#5e5e66;text-transform:uppercase;margin-bottom:9px">版面</div>
+        <div style="display:flex;gap:4px;padding:4px;background:#0d0e10;border:1px solid rgba(255,255,255,.08);border-radius:8px">
+          <button data-val="sidebar" onClick="{{ setLayout }}" style="{{ swSideStyle }}">側欄</button>
+          <button data-val="topnav" onClick="{{ setLayout }}" style="{{ swTopStyle }}">頂欄</button>
+        </div>
+      </div>
+      <!-- spacer so logout button doesn't overlap -->
+      <div style="height:64px"></div>
+    </aside>
+  </sc-if>
+
+  <sc-if value="{{ isTopnav }}" hint-placeholder-val="{{ true }}">
+    <header style="position:fixed;left:0;right:0;top:0;height:60px;background:#16171a;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:28px;padding:0 28px;z-index:30">
+      <div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;letter-spacing:.04em;color:#ececee;flex:none">Barth<span style="color:#c8a667">ON</span> <span style="font-size:11px;color:#7c7c84;letter-spacing:.2em">後台</span></div>
+      <nav style="display:flex;gap:4px;flex:1;height:100%;align-items:stretch">
+        <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="5">
+          <button data-key="{{ item.key }}" onClick="{{ go }}" style="{{ item.tabStyle }}">
+            <i data-lucide="{{ item.icon }}" style="width:16px;height:16px"></i>
+            <span>{{ item.label }}</span>
+          </button>
+        </sc-for>
+      </nav>
+      <div style="display:flex;gap:4px;padding:4px;background:#0d0e10;border:1px solid rgba(255,255,255,.08);border-radius:8px;flex:none">
+        <button data-val="sidebar" onClick="{{ setLayout }}" style="{{ swSideStyle }}">側欄</button>
+        <button data-val="topnav" onClick="{{ setLayout }}" style="{{ swTopStyle }}">頂欄</button>
+      </div>
+    </header>
+  </sc-if>
+
+  <main style="{{ mainStyle }}">
+    <div style="max-width:1180px;margin:0 auto;padding:34px 40px 80px">
+
+      <!-- DASHBOARD -->
+      <sc-if value="{{ secDash }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="儀表板">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:30px">
+            <div>
+              <h1 style="font-size:26px;font-weight:500;color:#ececee">儀表板</h1>
+              <p style="font-size:14px;color:#7c7c84;margin-top:4px">總覽你的庫存與待辦詢問</p>
+            </div>
+            <button onClick="{{ openNew }}" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border:0;border-radius:8px;background:#c8a667;color:#15151a;font-size:14px;font-weight:600;cursor:pointer"><i data-lucide="plus" style="width:17px;height:17px"></i>新增腕錶</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:30px">
+            <sc-for list="{{ statCards }}" as="c" hint-placeholder-count="4">
+              <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px 22px">
+                <div style="font-size:12px;letter-spacing:.1em;color:#7c7c84">{{ c.label }}</div>
+                <div style="display:flex;align-items:baseline;gap:6px;margin-top:10px">
+                  <span style="{{ c.numStyle }}">{{ c.value }}</span>
+                  <span style="font-size:13px;color:#7c7c84">{{ c.note }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden">
+            <div style="padding:18px 22px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between">
+              <h3 style="font-size:15px;font-weight:500;color:#ececee">最新詢問</h3>
+              <button data-key="inquiries" onClick="{{ go }}" style="font-size:13px;color:#c8a667;background:none;border:0;cursor:pointer">查看全部 →</button>
+            </div>
+            <sc-for list="{{ recentInq }}" as="q" hint-placeholder-count="3">
+              <div style="padding:15px 22px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:16px">
+                <span style="width:8px;height:8px;border-radius:50%;flex:none;background:{{ q.dot }}"></span>
+                <div style="flex:none;width:90px"><div style="font-size:14px;color:#ececee">{{ q.name }}</div><div style="font-size:12px;color:#7c7c84">{{ q.date }}</div></div>
+                <div style="flex:1;min-width:0"><div style="font-size:13px;color:#b0b0b6">{{ q.watch }}</div><div style="font-size:13px;color:#8a8a92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ q.message }}</div></div>
+                <span style="font-size:12px;color:#7c7c84;flex:none">{{ q.status }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- WATCHES -->
+      <sc-if value="{{ secWatch }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="腕錶管理">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px">
+            <div>
+              <h1 style="font-size:26px;font-weight:500;color:#ececee">腕錶管理</h1>
+              <p style="font-size:14px;color:#7c7c84;margin-top:4px">共 {{ watchCount }} 件・點選任一列即可編輯</p>
+            </div>
+            <button onClick="{{ openNew }}" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border:0;border-radius:8px;background:#c8a667;color:#15151a;font-size:14px;font-weight:600;cursor:pointer"><i data-lucide="plus" style="width:17px;height:17px"></i>新增腕錶</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap">
+            <div style="position:relative;flex:1;min-width:220px">
+              <i data-lucide="search" style="width:16px;height:16px;color:#7c7c84;position:absolute;left:13px;top:50%;transform:translateY(-50%)"></i>
+              <input value="{{ search }}" onInput="{{ setSearch }}" placeholder="搜尋品牌或型號…" style="width:100%;background:#16171a;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px 10px 38px;font-size:14px">
+            </div>
+            <div style="display:flex;gap:6px">
+              <sc-for list="{{ statusChips }}" as="ch" hint-placeholder-count="3">
+                <button data-val="{{ ch.val }}" onClick="{{ setStatusFilter }}" style="{{ ch.style }}">{{ ch.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden">
+            <sc-for list="{{ watchList }}" as="w" hint-placeholder-count="0">
+              <div data-key="{{ w.id }}" onClick="{{ openEdit }}" style="display:flex;align-items:center;gap:16px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer">
+                <div style="width:54px;height:54px;border-radius:8px;flex:none;background:#0d0e10;border:1px solid rgba(255,255,255,.08);overflow:hidden;display:grid;place-items:center">
+                  <sc-if value="{{ w.hasCover }}" hint-placeholder-val="{{ false }}"><div style="{{ w.coverStyle }}"></div></sc-if>
+                  <sc-if value="{{ w.noCover }}" hint-placeholder-val="{{ true }}"><i data-lucide="watch" style="width:20px;height:20px;color:#4a4a52"></i></sc-if>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7c7c84">{{ w.brand }}</div>
+                  <div style="font-size:15px;color:#ececee;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ w.name }}</div>
+                  <div style="font-size:12px;color:#7c7c84;margin-top:2px">{{ w.metaLine }}</div>
+                </div>
+                <div style="flex:none;width:118px"><span style="display:inline-block;white-space:nowrap;font-size:12px;color:#b0b0b6;border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:3px 9px">{{ w.condText }}</span></div>
+                <div style="flex:none;width:84px;text-align:right;white-space:nowrap;font-family:'Cormorant Garamond',serif;font-size:17px;color:#e3c98c">{{ w.price }}</div>
+                <button data-key="{{ w.id }}" onClick="{{ togglePublish }}" style="{{ w.statusStyle }}">{{ w.statusText }}</button>
+                <button data-key="{{ w.id }}" onClick="{{ removeWatch }}" title="刪除" style="width:34px;height:34px;flex:none;display:grid;place-items:center;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:transparent;color:#7c7c84;cursor:pointer"><i data-lucide="trash-2" style="width:15px;height:15px"></i></button>
+              </div>
+            </sc-for>
+            <sc-if value="{{ watchEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:60px;text-align:center;color:#7c7c84;font-size:14px">沒有符合的腕錶。<button onClick="{{ openNew }}" style="color:#c8a667;background:none;border:0;cursor:pointer;font-size:14px">新增一支 →</button></div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- INQUIRIES -->
+      <sc-if value="{{ secInq }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="詢問訊息">
+          <div style="margin-bottom:24px">
+            <h1 style="font-size:26px;font-weight:500;color:#ececee">詢問訊息</h1>
+            <p style="font-size:14px;color:#7c7c84;margin-top:4px">買家透過 FB／LINE／IG 來的詢問,可標記處理狀態</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <sc-for list="{{ inqList }}" as="q" hint-placeholder-count="3">
+              <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:18px 20px;display:flex;gap:18px;align-items:flex-start">
+                <span style="width:10px;height:10px;border-radius:50%;flex:none;margin-top:6px;background:{{ q.dot }}"></span>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <span style="font-size:15px;color:#ececee;font-weight:500">{{ q.name }}</span>
+                    <span style="font-size:12px;color:#7c7c84">{{ q.contact }}</span>
+                    <span style="font-size:12px;color:#5e5e66">・{{ q.date }}</span>
+                  </div>
+                  <div style="font-size:13px;color:#c8a667;margin:5px 0">關注:{{ q.watch }}</div>
+                  <div style="font-size:14px;color:#b0b0b6;line-height:1.65">{{ q.message }}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;flex:none;align-items:flex-end">
+                  <select data-key="{{ q.id }}" onChange="{{ setInqStatus }}" value="{{ q.status }}" style="background:#0d0e10;border:1px solid rgba(255,255,255,.12);border-radius:7px;color:#ececee;padding:7px 10px;font-size:13px;cursor:pointer">
+                    <option value="新">新</option>
+                    <option value="處理中">處理中</option>
+                    <option value="已成交">已成交</option>
+                  </select>
+                  <button data-key="{{ q.id }}" onClick="{{ removeInq }}" style="font-size:12px;color:#7c7c84;background:none;border:0;cursor:pointer">刪除</button>
+                </div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ inqEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:50px;text-align:center;color:#7c7c84;font-size:14px;background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px">目前沒有詢問訊息。</div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- SITE COPY -->
+      <sc-if value="{{ secCopy }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="網站文案">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px">
+            <div>
+              <h1 style="font-size:26px;font-weight:500;color:#ececee">網站文案</h1>
+              <p style="font-size:14px;color:#7c7c84;margin-top:4px">編輯首頁主視覺、關於與聯絡資訊</p>
+            </div>
+            <button onClick="{{ saveCopy }}" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border:0;border-radius:8px;background:#c8a667;color:#15171a;font-size:14px;font-weight:600;cursor:pointer"><i data-lucide="save" style="width:16px;height:16px"></i>儲存文案</button>
+          </div>
+          <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:26px;display:flex;flex-direction:column;gap:20px;max-width:760px">
+            <div>
+              <label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:7px">首頁主標題</label>
+              <input name="heroTitle" value="{{ copy.heroTitle }}" onInput="{{ onCopy }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:11px 13px;font-size:15px">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:7px">首頁副標 / 介紹</label>
+              <textarea name="heroLead" onInput="{{ onCopy }}" value="{{ copy.heroLead }}" rows="3" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:11px 13px;font-size:14px;resize:vertical;line-height:1.6"></textarea>
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:7px">關於我們</label>
+              <textarea name="aboutText" onInput="{{ onCopy }}" value="{{ copy.aboutText }}" rows="3" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:11px 13px;font-size:14px;resize:vertical;line-height:1.6"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:7px">LINE ID</label><input name="lineId" value="{{ copy.lineId }}" onInput="{{ onCopy }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:11px 13px;font-size:14px"></div>
+              <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:7px">電話</label><input name="phone" value="{{ copy.phone }}" onInput="{{ onCopy }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:11px 13px;font-size:14px"></div>
+              <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:7px">Facebook 連結</label><input name="fbUrl" value="{{ copy.fbUrl }}" onInput="{{ onCopy }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:11px 13px;font-size:14px"></div>
+              <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:7px">Instagram 連結</label><input name="igUrl" value="{{ copy.igUrl }}" onInput="{{ onCopy }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:11px 13px;font-size:14px"></div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- PREVIEW -->
+      <sc-if value="{{ secPreview }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="前台預覽">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:8px">
+            <div><h1 style="font-size:26px;font-weight:500;color:#ececee">前台預覽</h1><p style="font-size:14px;color:#7c7c84;margin-top:4px">已上架的腕錶在前台網站長這樣（{{ publishedCount }} 件）</p></div>
+            <button onClick="{{ exportData }}" title="匯出 data.js,放進 public/ 後部署即可讓網站顯示你的內容" style="display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border:1px solid rgba(200,166,103,.4);border-radius:8px;background:rgba(200,166,103,.12);color:#e3c98c;font-size:14px;cursor:pointer;flex:none"><i data-lucide="download" style="width:16px;height:16px"></i>匯出網站資料</button>
+          </div>
+          <div style="background:#0b0b0d;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:34px;margin-top:18px">
+            <div style="text-align:center;margin-bottom:30px">
+              <div style="font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:#928c80">The Collection</div>
+              <div style="font-family:'Cormorant Garamond',serif;font-size:30px;color:#f1ece2;margin-top:8px">本期精選腕錶</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+              <sc-for list="{{ publishedList }}" as="w" hint-placeholder-count="0">
+                <div style="background:#15151a;border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column">
+                  <div style="position:relative;height:200px;background:#1b1b21;overflow:hidden;display:grid;place-items:center;border-bottom:1px solid rgba(255,255,255,.07)">
+                    <sc-if value="{{ w.hasCover }}" hint-placeholder-val="{{ false }}"><div style="{{ w.coverStyle }}"></div></sc-if>
+                    <sc-if value="{{ w.noCover }}" hint-placeholder-val="{{ true }}"><i data-lucide="watch" style="width:32px;height:32px;color:#3a3a42"></i></sc-if>
+                    <sc-if value="{{ w.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:12px;left:12px;background:rgba(8,8,10,.78);border:1px solid rgba(200,166,103,.28);font-size:11px;letter-spacing:.1em;color:#e3c98c;padding:5px 11px;white-space:nowrap">{{ w.badge }}</span></sc-if>
+                  </div>
+                  <div style="padding:18px 20px 20px;display:flex;flex-direction:column;flex:1">
+                    <div style="font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#928c80;margin-bottom:6px">{{ w.brand }}</div>
+                    <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:#f1ece2;line-height:1.3">{{ w.name }}</div>
+                    <div style="font-size:12px;color:#928c80;margin:6px 0 14px">{{ w.condText }}・{{ w.cat }}</div>
+                    <div style="margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.07);font-family:'Cormorant Garamond',serif;font-size:20px;color:#e3c98c">{{ w.price }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ noPublished }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;color:#7c7c84;padding:40px;font-size:14px">目前沒有已上架的腕錶。</div></sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </main>
+
+  <!-- EDIT DRAWER -->
+  <sc-if value="{{ hasEditing }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeEdit }}" style="position:fixed;inset:0;background:rgba(4,4,6,.66);backdrop-filter:blur(3px);z-index:50;animation:scrimIn .25s ease"></div>
+    <aside style="position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);background:#121316;border-left:1px solid rgba(255,255,255,.1);z-index:51;overflow-y:auto;animation:drawerIn .32s cubic-bezier(.22,.61,.36,1)">
+      <div style="position:sticky;top:0;background:#121316;border-bottom:1px solid rgba(255,255,255,.08);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;z-index:2">
+        <h2 style="font-size:18px;font-weight:500;color:#ececee">{{ drawerTitle }}</h2>
+        <button onClick="{{ closeEdit }}" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:transparent;color:#b0b0b6;cursor:pointer"><i data-lucide="x" style="width:18px;height:18px"></i></button>
+      </div>
+      <div style="padding:24px;display:flex;flex-direction:column;gap:22px">
+        <div>
+          <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:9px">實拍圖片（可批次上傳）</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+            <sc-for list="{{ edImages }}" as="img" hint-placeholder-count="0">
+              <div style="position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:#0d0e10">
+                <div style="{{ img.bg }}"></div>
+                <sc-if value="{{ img.cover }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:5px;left:5px;background:#c8a667;color:#15151a;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px">封面</span></sc-if>
+                <div style="position:absolute;bottom:0;left:0;right:0;display:flex;background:rgba(8,8,10,.82)">
+                  <button data-idx="{{ img.idx }}" onClick="{{ setCover }}" style="flex:1;border:0;background:transparent;color:#c8a667;font-size:11px;padding:5px;cursor:pointer">設封面</button>
+                  <button data-idx="{{ img.idx }}" onClick="{{ removeImage }}" style="flex:none;border:0;border-left:1px solid rgba(255,255,255,.12);background:transparent;color:#e0664d;font-size:11px;padding:5px 9px;cursor:pointer"><i data-lucide="trash-2" style="width:13px;height:13px"></i></button>
+                </div>
+              </div>
+            </sc-for>
+            <label style="aspect-ratio:1;border:1.5px dashed rgba(255,255,255,.18);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:#7c7c84;background:#0d0e10">
+              <i data-lucide="upload" style="width:20px;height:20px"></i>
+              <span style="font-size:11px">上傳</span>
+              <input type="file" accept="image/*" multiple onChange="{{ addImages }}" style="display:none">
+            </label>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">品牌 *</label><input name="brand" value="{{ ed.brand }}" onInput="{{ onField }}" placeholder="Rolex" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px"></div>
+          <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">類型</label>
+            <select name="cat" value="{{ ed.cat }}" onChange="{{ onField }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px;cursor:pointer">
+              <option value="運動">運動</option><option value="正裝">正裝</option><option value="古董">古董</option><option value="潮流">潮流</option>
+            </select>
+          </div>
+        </div>
+        <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">型號名稱 *</label><input name="name" value="{{ ed.name }}" onInput="{{ onField }}" placeholder="Submariner Date 116610LN" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">價格</label><input name="price" value="{{ ed.price }}" onInput="{{ onField }}" placeholder="NT$ 詢問" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px"></div>
+          <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">標籤</label><input name="badge" value="{{ ed.badge }}" onInput="{{ onField }}" placeholder="可留空" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px"></div>
+        </div>
+        <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:18px">
+          <div style="font-size:12px;letter-spacing:.12em;color:#c8a667;margin-bottom:14px">錶況</div>
+          <div style="display:flex;gap:8px;margin-bottom:16px">
+            <button data-val="全新" onClick="{{ setCond }}" style="{{ condNewStyle }}">全新</button>
+            <button data-val="二手" onClick="{{ setCond }}" style="{{ condUsedStyle }}">二手</button>
+          </div>
+          <sc-if value="{{ edIsUsed }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-bottom:16px"><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">幾成新</label>
+              <select name="pct" value="{{ ed.pct }}" onChange="{{ onField }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px;cursor:pointer">
+                <option value="99新">99 新</option><option value="98新">98 新</option><option value="97新">97 新</option><option value="95新">95 新</option><option value="9成新">9 成新</option><option value="85新">85 新</option><option value="8成新">8 成新</option>
+              </select>
+            </div>
+          </sc-if>
+          <div style="margin-bottom:16px"><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:8px">配件齊全度</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#b0b0b6;cursor:pointer"><input type="checkbox" name="box" checked="{{ edSet.box }}" onChange="{{ onSet }}" style="width:16px;height:16px;accent-color:#c8a667">原廠盒</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#b0b0b6;cursor:pointer"><input type="checkbox" name="card" checked="{{ edSet.card }}" onChange="{{ onSet }}" style="width:16px;height:16px;accent-color:#c8a667">保證卡</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#b0b0b6;cursor:pointer"><input type="checkbox" name="manual" checked="{{ edSet.manual }}" onChange="{{ onSet }}" style="width:16px;height:16px;accent-color:#c8a667">說明書</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#b0b0b6;cursor:pointer"><input type="checkbox" name="strap" checked="{{ edSet.strap }}" onChange="{{ onSet }}" style="width:16px;height:16px;accent-color:#c8a667">多餘錶帶／配件</label>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">保固狀態</label><input name="warranty" value="{{ ed.warranty }}" onInput="{{ onField }}" placeholder="原廠保固至 2026/05" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px"></div>
+            <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">產地／進口來源</label><input name="origin" value="{{ ed.origin }}" onInput="{{ onField }}" placeholder="日本平行輸入" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">型號 Ref.</label><input name="ref" value="{{ ed.ref }}" onInput="{{ onField }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px"></div>
+          <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">年份</label><input name="year" value="{{ ed.year }}" onInput="{{ onField }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px"></div>
+          <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">機芯</label><input name="movement" value="{{ ed.movement }}" onInput="{{ onField }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px"></div>
+          <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">錶徑</label><input name="size" value="{{ ed.size }}" onInput="{{ onField }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px"></div>
+          <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">材質</label><input name="material" value="{{ ed.material }}" onInput="{{ onField }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px"></div>
+          <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">防水</label><input name="water" value="{{ ed.water }}" onInput="{{ onField }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px"></div>
+        </div>
+        <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">介紹說明</label><textarea name="desc" onInput="{{ onField }}" value="{{ ed.desc }}" rows="4" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:11px 13px;font-size:14px;resize:vertical;line-height:1.6"></textarea></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 18px">
+          <div><div style="font-size:14px;color:#ececee">上架狀態</div><div style="font-size:12px;color:#7c7c84">下架後不會出現在前台</div></div>
+          <div style="display:flex;gap:6px">
+            <button data-val="published" onClick="{{ setStatus }}" style="{{ pubOnStyle }}">上架</button>
+            <button data-val="draft" onClick="{{ setStatus }}" style="{{ pubOffStyle }}">下架</button>
+          </div>
+        </div>
+      </div>
+      <div style="position:sticky;bottom:0;background:#121316;border-top:1px solid rgba(255,255,255,.08);padding:16px 24px;display:flex;gap:12px">
+        <button onClick="{{ closeEdit }}" style="flex:none;padding:12px 22px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:transparent;color:#b0b0b6;font-size:14px;cursor:pointer">取消</button>
+        <button onClick="{{ save }}" style="flex:1;padding:12px;border:0;border-radius:8px;background:#c8a667;color:#15151a;font-size:14px;font-weight:600;cursor:pointer">儲存</button>
+      </div>
+    </aside>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#ececee;color:#15151a;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:500;z-index:60;box-shadow:0 16px 40px -12px rgba(0,0,0,.6);animation:toastIn .3s ease">{{ toast }}</div>
+  </sc-if>
+
+</div>
+</x-dc>
+</div>
+
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  KEY = "barthon_admin_v1";
+
+  DEFW = [
+    {id:"w1",brand:"Rolex",name:"Submariner Date 116610LN",cat:"運動",price:"NT$ 詢問",badge:"熱門",condition:"二手",pct:"95新",set:{box:true,card:true,manual:true,strap:false},warranty:"原廠保固至 2025/08",origin:"香港平行輸入",ref:"116610LN",year:"2018",movement:"Cal. 3135 自動上鍊",size:"40mm",material:"904L 不鏽鋼／陶瓷圈",water:"300m",accessories:"原廠盒、保卡、說明書",desc:"經典黑水鬼,陶瓷圈口、夜光清晰,運動與正裝皆宜。錶況約 95 新,僅日常配戴細紋,功能一切正常。",images:[],status:"published"},
+    {id:"w2",brand:"Omega",name:"Speedmaster Professional 月球錶",cat:"運動",price:"NT$ 詢問",badge:"",condition:"二手",pct:"99新",set:{box:true,card:true,manual:false,strap:false},warranty:"店家保固 6 個月",origin:"日本平行輸入",ref:"310.30.42",year:"2021",movement:"Cal. 3861 手動上鍊",size:"42mm",material:"不鏽鋼",water:"50m",accessories:"原廠盒、保卡",desc:"傳奇登月計時碼錶,Hesalite 鏡面、經典三眼盤面。錶況極佳,計時功能準確。",images:[],status:"published"},
+    {id:"w3",brand:"Tudor",name:"Black Bay 58 藍水鬼",cat:"運動",price:"NT$ 詢問",badge:"近全新",condition:"二手",pct:"99新",set:{box:true,card:true,manual:false,strap:true},warranty:"原廠保固至 2027/03",origin:"歐洲平行輸入",ref:"79030B",year:"2022",movement:"MT5402 自動上鍊",size:"39mm",material:"不鏽鋼",water:"200m",accessories:"原廠盒、保卡、雙錶帶",desc:"復古比例的 39mm 藍盤潛水錶,佩戴舒適,近全新狀態,附原廠膠帶與鋼帶。",images:[],status:"published"},
+    {id:"w4",brand:"Cartier",name:"Tank Must 大型石英",cat:"正裝",price:"NT$ 詢問",badge:"",condition:"全新",pct:"",set:{box:true,card:true,manual:true,strap:false},warranty:"原廠保固 2 年",origin:"歐洲進口",ref:"WSTA0041",year:"2023",movement:"高效能石英",size:"33.7 × 25.5mm",material:"不鏽鋼",water:"30m",accessories:"原廠盒、保卡",desc:"卡地亞經典 Tank 線條,簡約優雅的正裝首選。皮革錶帶,日常通勤、宴會皆合宜。",images:[],status:"draft"},
+    {id:"w5",brand:"Seiko",name:"Presage 琺瑯面盤自動錶",cat:"潮流",price:"NT$ 詢問",badge:"",condition:"全新",pct:"",set:{box:true,card:false,manual:true,strap:false},warranty:"店家保固 1 年",origin:"日本進口",ref:"SPB047",year:"2023",movement:"6R27 自動上鍊",size:"40.5mm",material:"不鏽鋼",water:"100m",accessories:"原廠盒、說明書",desc:"日系工藝的琺瑯白面盤,質感遠超價格。動力儲存顯示,入門機械首選。",images:[],status:"published"}
+  ];
+  DEFQ = [
+    {id:"q1",name:"陳先生",contact:"LINE: chen0912",watch:"Rolex Submariner 116610LN",message:"請問這支可以面交驗錶嗎?台北可約嗎?另外能附原廠盒單一起嗎?",date:"2026/06/22",status:"新"},
+    {id:"q2",name:"Linda",contact:"Messenger",watch:"Tudor Black Bay 58 藍水鬼",message:"想問最低能到多少?有附原廠鋼帶嗎?",date:"2026/06/21",status:"處理中"},
+    {id:"q3",name:"王小姐",contact:"IG DM",watch:"Cartier Tank Must",message:"這款還有現貨嗎?想當生日禮物,需要包裝。",date:"2026/06/19",status:"已成交"}
+  ];
+  DEFC = {heroTitle:"進口腕錶 藏家精選",heroLead:"嚴選海外進口腕錶,從運動到正裝、從現代到古董,每一支皆現貨實拍、正品保證。台灣本島可面交驗錶。",aboutText:"BarthON 鐘錶從一位錶迷的收藏起步。所有腕錶皆親自海外選貨、進口、檢查後才上架,現貨實拍、來源透明。",lineId:"@barthon",phone:"0912-345-678",fbUrl:"https://facebook.com/barthon",igUrl:"https://instagram.com/barthon"};
+
+  constructor(props){
+    super(props);
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem("barthon_admin_v1")); } catch(e){}
+    this.state = {
+      layoutMode: (saved && saved.layoutMode) || "sidebar",
+      section: "dashboard",
+      watches: (saved && saved.watches) || this.DEFW,
+      inquiries: (saved && saved.inquiries) || this.DEFQ,
+      copy: (saved && saved.copy) || this.DEFC,
+      editing: null, editingId: null,
+      search: "", statusFilter: "all", toast: null
+    };
+  }
+  componentDidMount(){ this.icons(); }
+  componentDidUpdate(){ this.icons(); }
+  icons(){ if(window.lucide){ try{ window.lucide.createIcons(); }catch(e){} } }
+  persist(){
+    const {watches,inquiries,copy,layoutMode} = this.state;
+    try{ localStorage.setItem(this.KEY, JSON.stringify({watches,inquiries,copy,layoutMode})); }catch(e){}
+  }
+  toastMsg(m){ this.setState({toast:m}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:null}),1900); }
+  blank(){ return {brand:"",name:"",cat:"運動",price:"NT$ 詢問",badge:"",condition:"二手",pct:"99新",set:{box:true,card:true,manual:false,strap:false},warranty:"",origin:"",ref:"",year:"",movement:"",size:"",material:"",water:"",accessories:"",desc:"",images:[],status:"published"}; }
+
+  setLayout = (e)=>{ const m=e.currentTarget.dataset.val; this.setState({layoutMode:m}, ()=>this.persist()); };
+  go = (e)=>{ const k=e.currentTarget.dataset.key; this.setState({section:k, editing:null, editingId:null}); };
+  openNew = ()=> this.setState({editing:this.blank(), editingId:null});
+  openEdit = (e)=>{ const id=e.currentTarget.dataset.key; const w=this.state.watches.find(x=>x.id===id); if(w) this.setState({editing:JSON.parse(JSON.stringify(w)), editingId:id}); };
+  closeEdit = ()=> this.setState({editing:null, editingId:null});
+
+  onField = (e)=>{ const t=e.target; const v=t.type==="checkbox"?t.checked:t.value; const n=t.name; this.setState(s=>({editing:{...s.editing,[n]:v}})); };
+  onSet = (e)=>{ const n=e.target.name, c=e.target.checked; this.setState(s=>({editing:{...s.editing,set:{...s.editing.set,[n]:c}}})); };
+  setCond = (e)=>{ const v=e.currentTarget.dataset.val; this.setState(s=>({editing:{...s.editing,condition:v}})); };
+  setStatus = (e)=>{ const v=e.currentTarget.dataset.val; this.setState(s=>({editing:{...s.editing,status:v}})); };
+
+  addImages = (e)=>{
+    const files=[...e.target.files]; if(!files.length) return;
+    let pending=files.length; const urls=[];
+    files.forEach(f=>{ const r=new FileReader(); r.onload=()=>{ urls.push(r.result); pending--; if(pending===0){ this.setState(s=>({editing:{...s.editing,images:[...(s.editing.images||[]),...urls]}})); } }; r.readAsDataURL(f); });
+    e.target.value="";
+  };
+  removeImage = (e)=>{ const i=+e.currentTarget.dataset.idx; this.setState(s=>({editing:{...s.editing,images:s.editing.images.filter((_,k)=>k!==i)}})); };
+  setCover = (e)=>{ const i=+e.currentTarget.dataset.idx; this.setState(s=>{ const a=[...s.editing.images]; const [m]=a.splice(i,1); a.unshift(m); return {editing:{...s.editing,images:a}}; }); };
+
+  save = ()=>{
+    const ed=this.state.editing;
+    if(!ed.brand || !ed.name){ this.toastMsg("請填寫品牌與型號名稱"); return; }
+    this.setState(s=>{
+      let watches;
+      if(s.editingId){ watches=s.watches.map(w=>w.id===s.editingId?{...ed,id:s.editingId}:w); }
+      else { watches=[{...ed,id:"w"+Date.now()}, ...s.watches]; }
+      return {watches, editing:null, editingId:null};
+    }, ()=>{ this.persist(); this.toastMsg("已儲存"); });
+  };
+  removeWatch = (e)=>{ e.stopPropagation(); const id=e.currentTarget.dataset.key; this.setState(s=>({watches:s.watches.filter(w=>w.id!==id)}), ()=>{ this.persist(); this.toastMsg("已刪除"); }); };
+  togglePublish = (e)=>{ e.stopPropagation(); const id=e.currentTarget.dataset.key; this.setState(s=>({watches:s.watches.map(w=>w.id===id?{...w,status:w.status==="published"?"draft":"published"}:w)}), ()=>this.persist()); };
+
+  setSearch = (e)=> this.setState({search:e.target.value});
+  setStatusFilter = (e)=> this.setState({statusFilter:e.currentTarget.dataset.val});
+  setInqStatus = (e)=>{ const id=e.currentTarget.dataset.key, v=e.target.value; this.setState(s=>({inquiries:s.inquiries.map(q=>q.id===id?{...q,status:v}:q)}), ()=>this.persist()); };
+  removeInq = (e)=>{ const id=e.currentTarget.dataset.key; this.setState(s=>({inquiries:s.inquiries.filter(q=>q.id!==id)}), ()=>{ this.persist(); this.toastMsg("已刪除"); }); };
+  onCopy = (e)=>{ const n=e.target.name, v=e.target.value; this.setState(s=>({copy:{...s.copy,[n]:v}})); };
+  saveCopy = ()=>{ this.persist(); this.toastMsg("文案已儲存"); };
+  exportData = ()=>{
+    const payload={ watches:this.state.watches, copy:this.state.copy };
+    const js="window.BARTHON_DATA = "+JSON.stringify(payload,null,2)+";\n";
+    const blob=new Blob([js],{type:"text/javascript"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="data.js"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    this.toastMsg("已匯出 data.js — 放進 public/ 再部署");
+  };
+
+  condText(w){
+    if(w.condition==="全新") return "全新";
+    const set=w.set||{};
+    return (set.box && set.card) ? (w.pct+"・全套") : w.pct;
+  }
+  dotFor(s){ return s==="新"?"#c8a667":(s==="處理中"?"#6b9bd1":"#5bbf8a"); }
+
+  renderVals(){
+    const s=this.state;
+    const NAV_ON="display:flex;align-items:center;gap:12px;width:100%;padding:11px 13px;border:0;border-radius:8px;background:rgba(200,166,103,.14);color:#e3c98c;font-size:14px;cursor:pointer;text-align:left;font-weight:500";
+    const NAV_OFF="display:flex;align-items:center;gap:12px;width:100%;padding:11px 13px;border:0;border-radius:8px;background:transparent;color:#b0b0b6;font-size:14px;cursor:pointer;text-align:left;font-weight:400";
+    const TAB_ON="display:flex;align-items:center;gap:8px;padding:0 16px;border:0;border-bottom:2px solid #c8a667;background:transparent;color:#e3c98c;font-size:14px;cursor:pointer;font-weight:500";
+    const TAB_OFF="display:flex;align-items:center;gap:8px;padding:0 16px;border:0;border-bottom:2px solid transparent;background:transparent;color:#b0b0b6;font-size:14px;cursor:pointer;font-weight:400";
+    const items=[["dashboard","儀表板","layout-dashboard"],["watches","腕錶管理","watch"],["inquiries","詢問訊息","messages-square"],["copy","網站文案","file-text"],["preview","前台預覽","eye"]];
+    const navItems=items.map(([key,label,icon])=>({key,label,icon,style:s.section===key?NAV_ON:NAV_OFF,tabStyle:s.section===key?TAB_ON:TAB_OFF}));
+
+    const SW_ON="padding:5px 12px;border:0;border-radius:6px;background:#c8a667;color:#15151a;font-size:12px;cursor:pointer;font-weight:600";
+    const SW_OFF="padding:5px 12px;border:0;border-radius:6px;background:transparent;color:#7c7c84;font-size:12px;cursor:pointer";
+
+    const pubPill="display:inline-flex;align-items:center;white-space:nowrap;padding:6px 13px;border-radius:999px;font-size:12px;cursor:pointer;flex:none;border:1px solid rgba(91,191,138,.35);background:rgba(91,191,138,.12);color:#5bbf8a";
+    const draftPill="display:inline-flex;align-items:center;white-space:nowrap;padding:6px 13px;border-radius:999px;font-size:12px;cursor:pointer;flex:none;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#8a8a92";
+
+    const bgStyle=(url)=>({width:"100%",height:"100%",backgroundImage:'url("'+url+'")',backgroundSize:"cover",backgroundPosition:"center"});
+    const toView=(w)=>{ const has=!!(w.images&&w.images.length); return {id:w.id,brand:w.brand,name:w.name,cat:w.cat,price:w.price,badge:w.badge,hasBadge:!!w.badge,coverStyle:has?bgStyle(w.images[0]):null,hasCover:has,noCover:!has,metaLine:w.cat+"・"+(w.year||"年份未填"),condText:this.condText(w),statusText:w.status==="published"?"已上架":"下架中",statusStyle:w.status==="published"?pubPill:draftPill}; };
+
+    let list=s.watches.map(toView);
+    if(s.statusFilter==="published") list=list.filter(()=>true), list=s.watches.filter(w=>w.status==="published").map(toView);
+    else if(s.statusFilter==="draft") list=s.watches.filter(w=>w.status==="draft").map(toView);
+    const q=s.search.trim().toLowerCase();
+    if(q) list=list.filter(w=>(w.brand+" "+w.name).toLowerCase().includes(q));
+
+    const chip=(on)=>"padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid "+(on?"#c8a667":"rgba(255,255,255,.12)")+";background:"+(on?"rgba(200,166,103,.14)":"transparent")+";color:"+(on?"#e3c98c":"#b0b0b6");
+    const statusChips=[["all","全部"],["published","已上架"],["draft","下架中"]].map(([val,label])=>({val,label,style:chip(s.statusFilter===val)}));
+
+    const pub=s.watches.filter(w=>w.status==="published");
+    const draftN=s.watches.length-pub.length;
+    const newInq=s.inquiries.filter(x=>x.status==="新").length;
+    const bigNum="font-family:'Cormorant Garamond',serif;font-size:34px;line-height:1";
+    const statCards=[
+      {label:"腕錶總數",value:s.watches.length,note:"件",numStyle:bigNum+";color:#ececee"},
+      {label:"已上架",value:pub.length,note:"件",numStyle:bigNum+";color:#5bbf8a"},
+      {label:"草稿／下架",value:draftN,note:"件",numStyle:bigNum+";color:#8a8a92"},
+      {label:"待回覆詢問",value:newInq,note:"則",numStyle:bigNum+";color:#e3c98c"}
+    ];
+
+    const inqList=s.inquiries.map(x=>({...x,dot:this.dotFor(x.status)}));
+    const recentInq=inqList.slice(0,4);
+
+    const ed=s.editing||{};
+    const isUsed=ed.condition==="二手";
+    const condBtn=(on)=>"flex:1;padding:10px;border-radius:7px;font-size:14px;cursor:pointer;border:1px solid "+(on?"#c8a667":"rgba(255,255,255,.14)")+";background:"+(on?"rgba(200,166,103,.14)":"transparent")+";color:"+(on?"#e3c98c":"#b0b0b6");
+    const segBtn=(on,kind)=>{ const c=kind==="pub"?"#5bbf8a":"#8a8a92"; const bg=kind==="pub"?"rgba(91,191,138,.14)":"rgba(255,255,255,.06)"; return "padding:8px 18px;border-radius:7px;font-size:13px;cursor:pointer;border:1px solid "+(on?(kind==="pub"?"rgba(91,191,138,.4)":"rgba(255,255,255,.2)"):"transparent")+";background:"+(on?bg:"transparent")+";color:"+(on?c:"#6f6a60"); };
+    const edImages=(ed.images||[]).map((url,i)=>({bg:{position:"absolute",inset:0,backgroundImage:'url("'+url+'")',backgroundSize:"cover",backgroundPosition:"center"},cover:i===0,idx:i}));
+
+    return {
+      isSidebar:s.layoutMode==="sidebar", isTopnav:s.layoutMode==="topnav",
+      navItems,
+      swSideStyle:s.layoutMode==="sidebar"?SW_ON:SW_OFF, swTopStyle:s.layoutMode==="topnav"?SW_ON:SW_OFF,
+      mainStyle:s.layoutMode==="sidebar"?{marginLeft:"240px"}:{marginTop:"60px"},
+      go:this.go, setLayout:this.setLayout, openNew:this.openNew, openEdit:this.openEdit, closeEdit:this.closeEdit,
+      secDash:s.section==="dashboard", secWatch:s.section==="watches", secInq:s.section==="inquiries", secCopy:s.section==="copy", secPreview:s.section==="preview",
+      statCards, recentInq, inqList, inqEmpty:inqList.length===0,
+      watchList:list, watchCount:s.watches.length, watchEmpty:list.length===0,
+      search:s.search, setSearch:this.setSearch, statusChips, setStatusFilter:this.setStatusFilter,
+      togglePublish:this.togglePublish, removeWatch:this.removeWatch,
+      copy:s.copy, onCopy:this.onCopy, saveCopy:this.saveCopy, exportData:this.exportData,
+      publishedList:pub.map(toView), publishedCount:pub.length, noPublished:pub.length===0,
+      setInqStatus:this.setInqStatus, removeInq:this.removeInq,
+      hasEditing:!!s.editing, drawerTitle:s.editingId?"編輯腕錶":"新增腕錶",
+      ed, edImages, edSet:ed.set||{}, edIsUsed:isUsed,
+      onField:this.onField, onSet:this.onSet, setCond:this.setCond, setStatus:this.setStatus,
+      addImages:this.addImages, removeImage:this.removeImage, setCover:this.setCover, save:this.save,
+      condNewStyle:condBtn(ed.condition==="全新"), condUsedStyle:condBtn(isUsed),
+      pubOnStyle:segBtn(ed.status==="published","pub"), pubOffStyle:segBtn(ed.status==="draft","draft"),
+      toast:s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>
