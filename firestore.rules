@@ -1,3 +1,4 @@
+// 由 .github/workflows/deploy-rules.yml 在規則檔變動時自動部署到 named database 'barthon'
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
