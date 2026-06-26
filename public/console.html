@@ -455,9 +455,18 @@ class Component extends DCLogic {
     };
   }
   componentDidMount(){ this._load(); }
+  // Firebase 由 <head> 的 module script 非同步初始化,元件可能先掛載;
+  // 等到 window.__db 就緒再讀,避免競態造成載入 0 筆。
+  async _waitForFirebase(timeoutMs=10000){
+    const start = Date.now();
+    while(!(window.__db && window.__fs)){
+      if(Date.now()-start > timeoutMs) throw new Error('Firebase not initialized');
+      await new Promise(r=>setTimeout(r,80));
+    }
+  }
   async _load(){
     try {
-      if(!window.__db || !window.__fs){ throw new Error('Firebase not initialized'); }
+      await this._waitForFirebase();
       const db = window.__db;
       const { collection, doc, setDoc, getDocs, getDoc } = window.__fs;
       const [wSnap, iSnap, cSnap] = await Promise.all([
