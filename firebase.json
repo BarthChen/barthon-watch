@@ -1,5 +1,6 @@
 {
   "firestore": {
+    "database": "barthon",
     "rules": "firestore.rules"
   },
   "storage": {
