@@ -546,6 +546,7 @@
     if(c.heroLead){ const el=document.querySelector(".hero p.lead"); if(el) el.textContent=c.heroLead; }
     if(c.heroTitle){ const h=document.querySelector(".hero h1"); if(h){ const en=h.querySelector(".en"); h.innerHTML=c.heroTitle.split(/\s+/).join("<br>")+(en?en.outerHTML:""); } }
     if(c.aboutText){ const ap=document.querySelector("#about .about-grid p"); if(ap) ap.textContent=c.aboutText; }
+    if(c.aboutImg){ const el=document.querySelector(".about-figure .photo"); if(el){ el.style.backgroundImage='url("'+c.aboutImg+'")'; el.style.backgroundSize='cover'; el.style.backgroundPosition='center'; el.classList.remove('empty'); } }
     const map={"fb-marketplace":c.fbUrl,"messenger":c.fbUrl,"instagram":c.igUrl};
     document.querySelectorAll("[data-link]").forEach(a=>{
       const k=a.getAttribute("data-link");

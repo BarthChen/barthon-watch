@@ -289,6 +289,17 @@ onAuthStateChanged(auth, user => {
               <label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:7px">關於我們</label>
               <textarea name="aboutText" onInput="{{ onCopy }}" value="{{ copy.aboutText }}" rows="3" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:11px 13px;font-size:14px;resize:vertical;line-height:1.6"></textarea>
             </div>
+            <div>
+              <label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:10px">店家／情境照</label>
+              <sc-if value="{{ hasAboutImg }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ aboutImgStyle }}"></div>
+              </sc-if>
+              <label style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:1px dashed rgba(200,166,103,.4);border-radius:8px;background:rgba(200,166,103,.06);color:#e3c98c;font-size:13px;cursor:pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                {{ aboutBtnLabel }}
+                <input type="file" accept="image/*" onChange="{{ uploadAboutImg }}" style="display:none">
+              </label>
+            </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
               <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:7px">LINE ID</label><input name="lineId" value="{{ copy.lineId }}" onInput="{{ onCopy }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:11px 13px;font-size:14px"></div>
               <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:7px">電話</label><input name="phone" value="{{ copy.phone }}" onInput="{{ onCopy }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:11px 13px;font-size:14px"></div>
@@ -439,7 +450,7 @@ onAuthStateChanged(auth, user => {
 class Component extends DCLogic {
   KEY = "barthon_admin_v1";
 
-  DEFC = {heroImg:"",heroTitle:"進口腕錶 藏家精選",heroLead:"嚴選海外進口腕錶,從運動到正裝、從現代到古董,每一支皆現貨實拍、正品保證。台灣本島可面交驗錶。",aboutText:"BarthON 鐘錶從一位錶迷的收藏起步。所有腕錶皆親自海外選貨、進口、檢查後才上架,現貨實拍、來源透明。",lineId:"@barthon",phone:"0912-345-678",fbUrl:"https://facebook.com/barthon",igUrl:"https://instagram.com/barthon"};
+  DEFC = {heroImg:"",aboutImg:"",heroTitle:"進口腕錶 藏家精選",heroLead:"嚴選海外進口腕錶,從運動到正裝、從現代到古董,每一支皆現貨實拍、正品保證。台灣本島可面交驗錶。",aboutText:"BarthON 鐘錶從一位錶迷的收藏起步。所有腕錶皆親自海外選貨、進口、檢查後才上架,現貨實拍、來源透明。",lineId:"@barthon",phone:"0912-345-678",fbUrl:"https://facebook.com/barthon",igUrl:"https://instagram.com/barthon"};
 
   constructor(props){
     super(props);
@@ -589,26 +600,28 @@ class Component extends DCLogic {
       this.toastMsg("文案已儲存");
     } catch(e){ console.error('saveCopy failed',e); this.toastMsg("儲存失敗"); }
   };
-  uploadHeroImg = async (e)=>{
+  // 共用:上傳網站圖片到 Storage site/,存進 site/copy 的指定欄位,並刪掉被取代的舊圖
+  async _uploadSiteImg(e, field, prefix, label){
     const file = e.target.files && e.target.files[0]; if(!file) return;
     e.target.value="";
     this.toastMsg("上傳中…");
     try {
       const { ref, uploadBytes, getDownloadURL } = window.__storageFs;
-      const path = `site/hero_${Date.now()}_${file.name.replace(/[^\w.-]/g,'_')}`;
+      const path = `site/${prefix}_${Date.now()}_${file.name.replace(/[^\w.-]/g,'_')}`;
       const r = ref(window.__storage, path);
       await uploadBytes(r, file);
       const url = await getDownloadURL(r);
-      const oldImg = this.state.copy.heroImg;
-      const newCopy = {...this.state.copy, heroImg: url};
+      const oldImg = this.state.copy[field];
+      const newCopy = {...this.state.copy, [field]: url};
       const { doc, setDoc } = window.__fs;
       await setDoc(doc(window.__db,'site','copy'), newCopy);
-      // 刪掉被取代的舊主視覺圖,避免孤兒檔案
-      if(oldImg && oldImg!==url) await this.deleteImages([oldImg]);
+      if(oldImg && oldImg!==url) await this.deleteImages([oldImg]); // 刪舊圖避免孤兒檔案
       this.setState({copy: newCopy});
-      this.toastMsg("主視覺照片已上傳");
-    } catch(err){ console.error('uploadHeroImg failed',err); this.toastMsg("上傳失敗"); }
-  };
+      this.toastMsg(label+"已上傳");
+    } catch(err){ console.error('uploadSiteImg failed',err); this.toastMsg("上傳失敗"); }
+  }
+  uploadHeroImg  = (e)=> this._uploadSiteImg(e, 'heroImg',  'hero',  '主視覺照片');
+  uploadAboutImg = (e)=> this._uploadSiteImg(e, 'aboutImg', 'about', '店家照片');
 
   condText(w){
     if(w.condition==="全新") return "全新";
@@ -633,6 +646,7 @@ class Component extends DCLogic {
     const draftPill="display:inline-flex;align-items:center;white-space:nowrap;padding:6px 13px;border-radius:999px;font-size:12px;cursor:pointer;flex:none;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#8a8a92";
 
     const bgStyle=(url)=>({width:"100%",height:"100%",backgroundImage:'url("'+url+'")',backgroundSize:"cover",backgroundPosition:"center"});
+    const imgPreview=(url)=> url ? {width:"100%",height:"220px",borderRadius:"8px",marginBottom:"10px",border:"1px solid rgba(255,255,255,.08)",backgroundImage:'url("'+url+'")',backgroundSize:"cover",backgroundPosition:"center"} : null;
     const toView=(w)=>{ const has=!!(w.images&&w.images.length); return {id:w.id,brand:w.brand,name:w.name,cat:w.cat,price:w.price,badge:w.badge,hasBadge:!!w.badge,coverStyle:has?bgStyle(w.images[0]):null,hasCover:has,noCover:!has,metaLine:w.cat+"・"+(w.year||"年份未填"),condText:this.condText(w),statusText:w.status==="published"?"已上架":"下架中",statusStyle:w.status==="published"?pubPill:draftPill}; };
 
     let list=s.watches.map(toView);
@@ -677,10 +691,14 @@ class Component extends DCLogic {
       search:s.search, setSearch:this.setSearch, statusChips, setStatusFilter:this.setStatusFilter,
       togglePublish:this.togglePublish, removeWatch:this.removeWatch,
       loading:s.loading,
-      copy:s.copy, onCopy:this.onCopy, saveCopy:this.saveCopy, uploadHeroImg:this.uploadHeroImg,
+      copy:s.copy, onCopy:this.onCopy, saveCopy:this.saveCopy,
+      uploadHeroImg:this.uploadHeroImg, uploadAboutImg:this.uploadAboutImg,
       hasHeroImg:!!(s.copy&&s.copy.heroImg),
-      heroImgStyle:(s.copy&&s.copy.heroImg)?{width:"100%",height:"220px",borderRadius:"8px",marginBottom:"10px",border:"1px solid rgba(255,255,255,.08)",backgroundImage:'url("'+s.copy.heroImg+'")',backgroundSize:"cover",backgroundPosition:"center"}:null,
+      heroImgStyle:imgPreview(s.copy&&s.copy.heroImg),
       heroBtnLabel:(s.copy&&s.copy.heroImg)?"更換照片":"上傳照片",
+      hasAboutImg:!!(s.copy&&s.copy.aboutImg),
+      aboutImgStyle:imgPreview(s.copy&&s.copy.aboutImg),
+      aboutBtnLabel:(s.copy&&s.copy.aboutImg)?"更換照片":"上傳照片",
       publishedList:pub.map(toView), publishedCount:pub.length, noPublished:pub.length===0,
       setInqStatus:this.setInqStatus, removeInq:this.removeInq,
       hasEditing:!!s.editing, drawerTitle:s.editingId?"編輯腕錶":"新增腕錶",
