@@ -1,13 +1,26 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+
+    // 只有這個管理員帳號能寫入
+    function isAdmin() {
+      return request.auth != null
+             && request.auth.token.email == 'fg3797@gmail.com';
+    }
+    // 上傳時:限圖片、限 10MB;刪除時 request.resource 為 null,放行
+    function validWrite() {
+      return request.resource == null
+             || (request.resource.size < 10 * 1024 * 1024
+                 && request.resource.contentType.matches('image/.*'));
+    }
+
     match /watches/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin() && validWrite();
     }
     match /site/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isAdmin() && validWrite();
     }
   }
 }

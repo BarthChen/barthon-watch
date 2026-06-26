@@ -461,10 +461,34 @@
 </section>
 
 <section class="contact" id="contact">
+  <style>
+    .inq-form{max-width:560px;margin:26px auto 0;display:flex;flex-direction:column;gap:14px;text-align:left}
+    .inq-form .inq-row{display:flex;gap:14px}
+    .inq-form .inq-row input{flex:1;min-width:0}
+    .inq-form input,.inq-form textarea{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line-strong);border-radius:10px;color:var(--ink);padding:13px 15px;font-size:15px;font-family:inherit;transition:border-color .2s}
+    .inq-form input::placeholder,.inq-form textarea::placeholder{color:var(--muted-2)}
+    .inq-form input:focus,.inq-form textarea:focus{outline:none;border-color:var(--gold)}
+    .inq-form textarea{resize:vertical;line-height:1.6}
+    .inq-form .btn-gold{justify-content:center;border:0;cursor:pointer;font-size:15px;width:100%}
+    .inq-form .inq-status{min-height:20px;font-size:14px;margin:2px 0 0;text-align:center}
+    .inq-or{max-width:560px;margin:34px auto 22px;text-align:center;color:var(--muted-2);font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+    @media (max-width:560px){ .inq-form .inq-row{flex-direction:column} }
+  </style>
   <div class="wrap">
     <span class="eyebrow">Get In Touch</span>
     <h2>看到喜歡的錶?<br><span class="en">直接私訊我</span></h2>
-    <p>選擇你最方便的方式聯絡,我會盡快回覆你的問題與報價。</p>
+    <p>填表單留下聯絡方式,我會盡快回覆你的問題與報價;或選擇你最方便的方式私訊。</p>
+    <form id="inqForm" class="inq-form" novalidate>
+      <div class="inq-row">
+        <input name="name" placeholder="你的稱呼 *" autocomplete="name" maxlength="80" required>
+        <input name="contact" placeholder="聯絡方式 LINE／電話／Email *" autocomplete="off" maxlength="160" required>
+      </div>
+      <input id="inqWatch" name="watch" placeholder="想詢問的錶款（選填）" autocomplete="off" maxlength="120">
+      <textarea name="message" rows="3" placeholder="想問的問題,例如約面交、報價、規格… *" maxlength="1800" required></textarea>
+      <button type="submit" class="btn btn-gold"><i data-lucide="send"></i>送出詢問</button>
+      <p class="inq-status" id="inqStatus" aria-live="polite"></p>
+    </form>
+    <div class="inq-or">或直接用以下方式私訊</div>
     <div class="contact-methods">
       <a class="cm" href="#" data-link="fb-marketplace"><i data-lucide="store"></i><span class="l">FB Marketplace</span><span class="s">商品頁私訊</span></a>
       <a class="cm" href="#" data-link="messenger"><i data-lucide="facebook"></i><span class="l">Messenger</span><span class="s">粉專私訊</span></a>
@@ -512,43 +536,10 @@
   </div>
 </footer>
 
-<script src="data.js"></script>
 <script>
-  // ---- watch data (demo placeholders — user swaps photos & details) ----
-  const WATCHES = [
-    {id:"w1", brand:"Rolex", name:"Submariner Date 116610LN", cat:"運動", badge:"熱門", price:"NT$ 詢問",
-     meta:"2018・9成新・附盒單", ref:"116610LN", year:"2018", movement:"Cal. 3135 自動上鍊",
-     size:"40mm", material:"904L 不鏽鋼／陶瓷圈", water:"300m", accessories:"原廠盒、保卡、說明書",
-     desc:"經典黑水鬼,陶瓷圈口、夜光清晰,運動與正裝皆宜。錶況約 9 成新,僅日常配戴細紋,功能一切正常。"},
-    {id:"w2", brand:"Omega", name:"Speedmaster Professional 月球錶", cat:"運動", badge:"", price:"NT$ 詢問",
-     meta:"手動上鍊・現貨", ref:"310.30.42", year:"2021", movement:"Cal. 3861 手動上鍊",
-     size:"42mm", material:"不鏽鋼", water:"50m", accessories:"原廠盒、保卡",
-     desc:"傳奇登月計時碼錶,Hesalite 鏡面、經典三眼盤面。錶況極佳,計時功能準確。"},
-    {id:"w3", brand:"Rolex", name:"Datejust 36 銀面", cat:"正裝", badge:"", price:"NT$ 詢問",
-     meta:"自動・正裝百搭", ref:"126200", year:"2020", movement:"Cal. 3235 自動上鍊",
-     size:"36mm", material:"不鏽鋼", water:"100m", accessories:"原廠盒、保卡",
-     desc:"百搭尺寸的銀色面盤 Datejust,蠔式錶帶,正裝、休閒兩相宜。狀態近全新。"},
-    {id:"w4", brand:"Tudor", name:"Black Bay 58 藍水鬼", cat:"運動", badge:"近全新", price:"NT$ 詢問",
-     meta:"39mm・近全新", ref:"79030B", year:"2022", movement:"MT5402 自動上鍊",
-     size:"39mm", material:"不鏽鋼", water:"200m", accessories:"原廠盒、保卡、雙錶帶",
-     desc:"復古比例的 39mm 藍盤潛水錶,佩戴舒適,近全新狀態,附原廠膠帶與鋼帶。"},
-    {id:"w5", brand:"Cartier", name:"Tank Must 大型石英", cat:"正裝", badge:"", price:"NT$ 詢問",
-     meta:"優雅正裝錶", ref:"WSTA0041", year:"2021", movement:"高效能石英",
-     size:"33.7 × 25.5mm", material:"不鏽鋼", water:"30m", accessories:"原廠盒、保卡",
-     desc:"卡地亞經典 Tank 線條,簡約優雅的正裝首選。皮革錶帶,日常通勤、宴會皆合宜。"},
-    {id:"w6", brand:"Seiko", name:"Presage 琺瑯面盤自動錶", cat:"潮流", badge:"", price:"NT$ 詢問",
-     meta:"機械・高 CP 值", ref:"SPB047", year:"2023", movement:"6R27 自動上鍊",
-     size:"40.5mm", material:"不鏽鋼", water:"100m", accessories:"原廠盒、說明書",
-     desc:"日系工藝的琺瑯白面盤,質感遠超價格。動力儲存顯示,入門機械首選。"},
-    {id:"w7", brand:"Longines", name:"古董手上鍊金錶", cat:"古董", badge:"古董", price:"NT$ 詢問",
-     meta:"1960s・Vintage", ref:"—", year:"1960s", movement:"手動上鍊機芯",
-     size:"34mm", material:"包金", water:"不防水", accessories:"無盒單・原汁原味",
-     desc:"1960 年代的浪琴古董金錶,溫潤包金錶殼、Vintage 米色面盤,藏家逸品。已整理保養。"},
-    {id:"w8", brand:"IWC", name:"Portofino 自動 40mm", cat:"正裝", badge:"", price:"NT$ 詢問",
-     meta:"簡約正裝・現貨", ref:"IW356501", year:"2019", movement:"Cal. 35111 自動上鍊",
-     size:"40mm", material:"不鏽鋼", water:"30m", accessories:"原廠盒、保卡",
-     desc:"萬國 Portofino 簡潔大三針,白面藍鋼指針,正裝經典。錶況良好,功能正常。"},
-  ];
+  // ---- 腕錶資料一律從 Firebase Firestore 即時載入(見下方 initFirebase) ----
+  // 載入完成前先以空陣列呈現,前台會顯示「目前沒有現貨」的提示。
+  const WATCHES = [];
   // ---- 從 Firebase Firestore 載入已上架腕錶與文案 ----
   function _applyCopy(c){ try{
     if(c.heroImg){ const el=document.querySelector(".hero-figure .photo"); if(el){ el.innerHTML='<img src="'+c.heroImg+'" alt="" style="width:100%;height:auto;display:block;">'; el.style.height='auto'; el.classList.remove('empty'); } }
@@ -563,13 +554,16 @@
       if(k==="line"&&c.lineId) a.setAttribute("href","https://line.me/R/ti/p/@"+c.lineId.replace(/^@/,""));
     });
   }catch(e){} }
-  (async function loadFromFirestore(){
+  (async function initFirebase(){
+    let db, collection, addDoc;
     try {
+      const { firebaseConfig } = await import("./firebase-config.js");
       const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js");
-      const { getFirestore, collection, getDocs, getDoc, doc } = await import("https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js");
-      const app = initializeApp({apiKey:"AIzaSyALTT3yHyEEOoD5jPoe4dkSNC2VJ2Mw3rI",authDomain:"barthon-watch.firebaseapp.com",projectId:"barthon-watch",storageBucket:"barthon-watch.firebasestorage.app",messagingSenderId:"324106141927",appId:"1:324106141927:web:e69561d4115b7faf3de242"});
-      const db = getFirestore(app, 'barthon');
-      const [wSnap,cSnap] = await Promise.all([getDocs(collection(db,'watches')), getDoc(doc(db,'site','copy'))]);
+      const fs = await import("https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js");
+      const app = initializeApp(firebaseConfig);
+      db = fs.getFirestore(app, 'barthon');
+      collection = fs.collection; addDoc = fs.addDoc;
+      const [wSnap,cSnap] = await Promise.all([fs.getDocs(fs.collection(db,'watches')), fs.getDoc(fs.doc(db,'site','copy'))]);
       const pub=[];
       wSnap.forEach(d=>{ const w=d.data(); if(w.status==="published") pub.push(w); });
       if(pub.length){
@@ -585,7 +579,42 @@
       BRANDS.length=0; BRANDS.push("全部",...Array.from(new Set(WATCHES.map(w=>w.brand))));
       renderFilters(); renderGrid();
     } catch(e){ console.warn("Firestore load failed:",e); }
+    // 不論腕錶是否載入成功,只要 db 就緒就掛上詢問表單
+    if(db && collection && addDoc) wireInquiryForm(db, collection, addDoc);
   })();
+
+  // ---- 詢問表單:送出後寫入 Firestore inquiries,後台即可收到 ----
+  function wireInquiryForm(db, collection, addDoc){
+    const form = document.getElementById("inqForm");
+    if(!form) return;
+    const statusEl = document.getElementById("inqStatus");
+    const setStatus = (msg, ok)=>{ if(statusEl){ statusEl.textContent=msg; statusEl.style.color = ok ? "#5bbf8a" : "#e0664d"; } };
+    form.addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      const name = (fd.get("name")||"").toString().trim();
+      const contact = (fd.get("contact")||"").toString().trim();
+      const watch = (fd.get("watch")||"").toString().trim();
+      const message = (fd.get("message")||"").toString().trim();
+      if(!name || !contact || !message){ setStatus("請填寫稱呼、聯絡方式與訊息。", false); return; }
+      const btn = form.querySelector("button[type=submit]");
+      if(btn){ btn.disabled=true; btn.textContent="送出中…"; }
+      try {
+        const now = new Date();
+        const date = now.getFullYear()+"/"+String(now.getMonth()+1).padStart(2,"0")+"/"+String(now.getDate()).padStart(2,"0");
+        await addDoc(collection(db,"inquiries"), { name, contact, watch, message, date, status:"新" });
+        form.reset();
+        setStatus("已送出,我會盡快回覆你!", true);
+      } catch(err){
+        console.error("inquiry submit failed", err);
+        setStatus("送出失敗,請改用下方 LINE / FB 私訊。", false);
+      } finally {
+        if(btn){ btn.disabled=false; btn.textContent="送出詢問"; }
+      }
+    });
+  }
+  // 詳情頁「私訊詢問此錶」會帶入錶款名稱
+  window.__setInquiryWatch = function(name){ const f=document.getElementById("inqWatch"); if(f) f.value=name||""; };
 
   const CATS = ["全部","運動","正裝","古董","潮流"];
   const BRANDS = ["全部", ...Array.from(new Set(WATCHES.map(w=>w.brand)))];
@@ -689,7 +718,7 @@
           ${specs.map(([k,v])=>`<div class="row"><dt>${k}</dt><dd>${v||"—"}</dd></div>`).join("")}
         </dl>
         <div class="d-cta">
-          <a class="btn btn-gold" href="#contact" data-close><i data-lucide="message-square"></i>私訊詢問此錶</a>
+          <a class="btn btn-gold" href="#contact" data-close data-inquire><i data-lucide="message-square"></i>私訊詢問此錶</a>
           <a class="btn btn-ghost" href="#contact" data-close><i data-lucide="phone"></i>來電洽詢</a>
         </div>
       </div>`;
@@ -697,6 +726,8 @@
     detail.setAttribute("aria-hidden","false");
     document.body.style.overflow = "hidden";
     detailInner.querySelectorAll("[data-close]").forEach(a=>a.addEventListener("click", closeDetail));
+    const inqBtn = detailInner.querySelector("[data-inquire]");
+    if(inqBtn) inqBtn.addEventListener("click", ()=>{ if(window.__setInquiryWatch) window.__setInquiryWatch(w.brand+" "+w.name); });
     if(window.lucide) lucide.createIcons();
   }
   function closeDetail(){

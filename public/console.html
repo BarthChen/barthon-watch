@@ -11,17 +11,10 @@ import { getAuth, onAuthStateChanged, signOut }
                             from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, getDocs, getDoc }
                             from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL }
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject }
                             from "https://www.gstatic.com/firebasejs/11.9.0/firebase-storage.js";
+import { firebaseConfig }    from "./firebase-config.js";
 
-const firebaseConfig = {
-  apiKey:            "AIzaSyALTT3yHyEEOoD5jPoe4dkSNC2VJ2Mw3rI",
-  authDomain:        "barthon-watch.firebaseapp.com",
-  projectId:         "barthon-watch",
-  storageBucket:     "barthon-watch.firebasestorage.app",
-  messagingSenderId: "324106141927",
-  appId:             "1:324106141927:web:e69561d4115b7faf3de242"
-};
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app, 'barthon');
@@ -29,7 +22,7 @@ const storage = getStorage(app);
 window.__db = db;
 window.__storage = storage;
 window.__fs = { collection, doc, setDoc, updateDoc, deleteDoc, getDocs, getDoc };
-window.__storageFs = { ref, uploadBytes, getDownloadURL };
+window.__storageFs = { ref, uploadBytes, getDownloadURL, deleteObject };
 
 onAuthStateChanged(auth, user => {
   if (!user) {
@@ -312,8 +305,7 @@ onAuthStateChanged(auth, user => {
       <sc-if value="{{ secPreview }}" hint-placeholder-val="{{ true }}">
         <div data-screen-label="前台預覽">
           <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:8px">
-            <div><h1 style="font-size:26px;font-weight:500;color:#ececee">前台預覽</h1><p style="font-size:14px;color:#7c7c84;margin-top:4px">已上架的腕錶在前台網站長這樣（{{ publishedCount }} 件）</p></div>
-            <button onClick="{{ exportData }}" title="匯出 data.js,放進 public/ 後部署即可讓網站顯示你的內容" style="display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border:1px solid rgba(200,166,103,.4);border-radius:8px;background:rgba(200,166,103,.12);color:#e3c98c;font-size:14px;cursor:pointer;flex:none"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="3" y2="15"/></svg>匯出網站資料</button>
+            <div><h1 style="font-size:26px;font-weight:500;color:#ececee">前台預覽</h1><p style="font-size:14px;color:#7c7c84;margin-top:4px">已上架的腕錶會即時同步到前台網站（{{ publishedCount }} 件），不需另外匯出或部署。</p></div>
           </div>
           <div style="background:#0b0b0d;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:34px;margin-top:18px">
             <div style="text-align:center;margin-bottom:30px">
@@ -449,18 +441,6 @@ onAuthStateChanged(auth, user => {
 class Component extends DCLogic {
   KEY = "barthon_admin_v1";
 
-  DEFW = [
-    {id:"w1",brand:"Rolex",name:"Submariner Date 116610LN",cat:"運動",price:"NT$ 詢問",badge:"熱門",condition:"二手",pct:"95新",set:{box:true,card:true,manual:true,strap:false},warranty:"原廠保固至 2025/08",origin:"香港平行輸入",ref:"116610LN",year:"2018",movement:"Cal. 3135 自動上鍊",size:"40mm",material:"904L 不鏽鋼／陶瓷圈",water:"300m",accessories:"原廠盒、保卡、說明書",desc:"經典黑水鬼,陶瓷圈口、夜光清晰,運動與正裝皆宜。錶況約 95 新,僅日常配戴細紋,功能一切正常。",images:[],status:"published"},
-    {id:"w2",brand:"Omega",name:"Speedmaster Professional 月球錶",cat:"運動",price:"NT$ 詢問",badge:"",condition:"二手",pct:"99新",set:{box:true,card:true,manual:false,strap:false},warranty:"店家保固 6 個月",origin:"日本平行輸入",ref:"310.30.42",year:"2021",movement:"Cal. 3861 手動上鍊",size:"42mm",material:"不鏽鋼",water:"50m",accessories:"原廠盒、保卡",desc:"傳奇登月計時碼錶,Hesalite 鏡面、經典三眼盤面。錶況極佳,計時功能準確。",images:[],status:"published"},
-    {id:"w3",brand:"Tudor",name:"Black Bay 58 藍水鬼",cat:"運動",price:"NT$ 詢問",badge:"近全新",condition:"二手",pct:"99新",set:{box:true,card:true,manual:false,strap:true},warranty:"原廠保固至 2027/03",origin:"歐洲平行輸入",ref:"79030B",year:"2022",movement:"MT5402 自動上鍊",size:"39mm",material:"不鏽鋼",water:"200m",accessories:"原廠盒、保卡、雙錶帶",desc:"復古比例的 39mm 藍盤潛水錶,佩戴舒適,近全新狀態,附原廠膠帶與鋼帶。",images:[],status:"published"},
-    {id:"w4",brand:"Cartier",name:"Tank Must 大型石英",cat:"正裝",price:"NT$ 詢問",badge:"",condition:"全新",pct:"",set:{box:true,card:true,manual:true,strap:false},warranty:"原廠保固 2 年",origin:"歐洲進口",ref:"WSTA0041",year:"2023",movement:"高效能石英",size:"33.7 × 25.5mm",material:"不鏽鋼",water:"30m",accessories:"原廠盒、保卡",desc:"卡地亞經典 Tank 線條,簡約優雅的正裝首選。皮革錶帶,日常通勤、宴會皆合宜。",images:[],status:"draft"},
-    {id:"w5",brand:"Seiko",name:"Presage 琺瑯面盤自動錶",cat:"潮流",price:"NT$ 詢問",badge:"",condition:"全新",pct:"",set:{box:true,card:false,manual:true,strap:false},warranty:"店家保固 1 年",origin:"日本進口",ref:"SPB047",year:"2023",movement:"6R27 自動上鍊",size:"40.5mm",material:"不鏽鋼",water:"100m",accessories:"原廠盒、說明書",desc:"日系工藝的琺瑯白面盤,質感遠超價格。動力儲存顯示,入門機械首選。",images:[],status:"published"}
-  ];
-  DEFQ = [
-    {id:"q1",name:"陳先生",contact:"LINE: chen0912",watch:"Rolex Submariner 116610LN",message:"請問這支可以面交驗錶嗎?台北可約嗎?另外能附原廠盒單一起嗎?",date:"2026/06/22",status:"新"},
-    {id:"q2",name:"Linda",contact:"Messenger",watch:"Tudor Black Bay 58 藍水鬼",message:"想問最低能到多少?有附原廠鋼帶嗎?",date:"2026/06/21",status:"處理中"},
-    {id:"q3",name:"王小姐",contact:"IG DM",watch:"Cartier Tank Must",message:"這款還有現貨嗎?想當生日禮物,需要包裝。",date:"2026/06/19",status:"已成交"}
-  ];
   DEFC = {heroImg:"",heroTitle:"進口腕錶 藏家精選",heroLead:"嚴選海外進口腕錶,從運動到正裝、從現代到古董,每一支皆現貨實拍、正品保證。台灣本島可面交驗錶。",aboutText:"BarthON 鐘錶從一位錶迷的收藏起步。所有腕錶皆親自海外選貨、進口、檢查後才上架,現貨實拍、來源透明。",lineId:"@barthon",phone:"0912-345-678",fbUrl:"https://facebook.com/barthon",igUrl:"https://instagram.com/barthon"};
 
   constructor(props){
@@ -488,9 +468,6 @@ class Component extends DCLogic {
       let watches=[]; wSnap.forEach(d=>watches.push({id:d.id,...d.data()}));
       let inquiries=[]; iSnap.forEach(d=>inquiries.push({id:d.id,...d.data()}));
       const copy = cSnap.exists() ? cSnap.data() : this.DEFC;
-      if(!watches.length){ for(const w of this.DEFW){ await setDoc(doc(db,'watches',w.id),w); } watches=[...this.DEFW]; }
-      if(!inquiries.length){ for(const q of this.DEFQ){ await setDoc(doc(db,'inquiries',q.id),q); } inquiries=[...this.DEFQ]; }
-      if(!cSnap.exists()) await setDoc(doc(db,'site','copy'), this.DEFC);
       this.setState({watches, inquiries, copy, loading:false});
     } catch(e){ console.error(e); this.setState({loading:false}); }
   }
@@ -545,13 +522,27 @@ class Component extends DCLogic {
   removeWatch = async (e)=>{
     e.stopPropagation();
     const id=e.currentTarget.dataset.key;
+    const w=this.state.watches.find(x=>x.id===id);
     try {
       const { doc, deleteDoc } = window.__fs;
       await deleteDoc(doc(window.__db,'watches',id));
+      // 一併刪除 Storage 內的圖片,避免孤兒檔案累積
+      await this.deleteImages(w && w.images);
       this.setState(s=>({watches:s.watches.filter(w=>w.id!==id)}));
       this.toastMsg("已刪除");
     } catch(e){ console.error('removeWatch failed',e); this.toastMsg("刪除失敗"); }
   };
+  // 由下載 URL 刪除 Storage 檔案;非本專案 Storage 的網址會略過。失敗不阻斷主流程。
+  async deleteImages(urls){
+    if(!urls || !urls.length) return;
+    const { ref, deleteObject } = window.__storageFs;
+    await Promise.all(urls.map(async u=>{
+      try {
+        if(typeof u!=="string" || u.indexOf("firebasestorage")===-1) return;
+        await deleteObject(ref(window.__storage, u));
+      } catch(err){ console.warn('deleteImage skipped',err && err.code); }
+    }));
+  }
   togglePublish = async (e)=>{
     e.stopPropagation();
     const id=e.currentTarget.dataset.key;
@@ -601,9 +592,12 @@ class Component extends DCLogic {
       const r = ref(window.__storage, path);
       await uploadBytes(r, file);
       const url = await getDownloadURL(r);
+      const oldImg = this.state.copy.heroImg;
       const newCopy = {...this.state.copy, heroImg: url};
       const { doc, setDoc } = window.__fs;
       await setDoc(doc(window.__db,'site','copy'), newCopy);
+      // 刪掉被取代的舊主視覺圖,避免孤兒檔案
+      if(oldImg && oldImg!==url) await this.deleteImages([oldImg]);
       this.setState({copy: newCopy});
       this.toastMsg("主視覺照片已上傳");
     } catch(err){ console.error('uploadHeroImg failed',err); this.toastMsg("上傳失敗"); }

@@ -12,14 +12,6 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
-    ],
-    "headers": [
-      {
-        "source": "data.js",
-        "headers": [
-          { "key": "Cache-Control", "value": "no-cache" }
-        ]
-      }
     ]
   }
 }
