@@ -28,7 +28,7 @@ jobs:
       - name: Deploy rules
         uses: w9jds/firebase-action@v13.20.1
         with:
-          args: deploy --only firestore:rules,storage:rules
+          args: deploy --only firestore:rules,storage
         env:
           GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           PROJECT_ID: barthon-watch
