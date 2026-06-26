@@ -268,14 +268,12 @@ onAuthStateChanged(auth, user => {
           <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:26px;display:flex;flex-direction:column;gap:20px;max-width:760px">
             <div>
               <label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:10px">主視覺腕錶照片</label>
-              <sc-if value="{{ copy.heroImg }}" hint-placeholder-val="{{ '' }}">
-                <div style="width:100%;height:220px;border-radius:8px;overflow:hidden;margin-bottom:10px;background:#0d0e10;border:1px solid rgba(255,255,255,.08)">
-                  <img src="{{ copy.heroImg }}" style="width:100%;height:100%;object-fit:cover;display:block" alt="主視覺">
-                </div>
+              <sc-if value="{{ hasHeroImg }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ heroImgStyle }}"></div>
               </sc-if>
               <label style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:1px dashed rgba(200,166,103,.4);border-radius:8px;background:rgba(200,166,103,.06);color:#e3c98c;font-size:13px;cursor:pointer">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                {{ copy.heroImg ? "更換照片" : "上傳照片" }}
+                {{ heroBtnLabel }}
                 <input type="file" accept="image/*" onChange="{{ uploadHeroImg }}" style="display:none">
               </label>
             </div>
@@ -680,6 +678,9 @@ class Component extends DCLogic {
       togglePublish:this.togglePublish, removeWatch:this.removeWatch,
       loading:s.loading,
       copy:s.copy, onCopy:this.onCopy, saveCopy:this.saveCopy, uploadHeroImg:this.uploadHeroImg,
+      hasHeroImg:!!(s.copy&&s.copy.heroImg),
+      heroImgStyle:(s.copy&&s.copy.heroImg)?{width:"100%",height:"220px",borderRadius:"8px",marginBottom:"10px",border:"1px solid rgba(255,255,255,.08)",backgroundImage:'url("'+s.copy.heroImg+'")',backgroundSize:"cover",backgroundPosition:"center"}:null,
+      heroBtnLabel:(s.copy&&s.copy.heroImg)?"更換照片":"上傳照片",
       publishedList:pub.map(toView), publishedCount:pub.length, noPublished:pub.length===0,
       setInqStatus:this.setInqStatus, removeInq:this.removeInq,
       hasEditing:!!s.editing, drawerTitle:s.editingId?"編輯腕錶":"新增腕錶",
