@@ -12,10 +12,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 用 firebase-tools 直接部署。舊的 action-hosting-deploy@v0 會在發布到 live
+      # 後重複 release 同一版本而回 400 FAILED_PRECONDITION,造成「部署成功卻紅燈」。
       - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
+        uses: w9jds/firebase-action@v13.20.1
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: barthon-watch
-          channelId: live
+          args: deploy --only hosting
+        env:
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          PROJECT_ID: barthon-watch
