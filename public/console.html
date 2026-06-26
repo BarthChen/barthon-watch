@@ -375,7 +375,7 @@ onAuthStateChanged(auth, user => {
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-          <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">品牌 *</label><input name="brand" value="{{ ed.brand }}" onInput="{{ onField }}" placeholder="Rolex" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px"></div>
+          <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">品牌 *</label><input name="brand" value="{{ ed.brand }}" onInput="{{ onField }}" placeholder="輸入品牌…" list="watch-brands" autocomplete="off" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px"></div>
           <div><label style="display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7c7c84;margin-bottom:6px">類型</label>
             <select name="cat" value="{{ ed.cat }}" onChange="{{ onField }}" style="width:100%;background:#0d0e10;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ececee;padding:10px 12px;font-size:14px;cursor:pointer">
               <option value="運動">運動</option><option value="正裝">正裝</option><option value="古董">古董</option><option value="潮流">潮流</option>
@@ -690,5 +690,64 @@ class Component extends DCLogic {
   }
 }
 </script>
+<datalist id="watch-brands">
+  <option value="Rolex 勞力士">
+  <option value="Tudor 帝舵">
+  <option value="Omega 歐米茄">
+  <option value="Longines 浪琴">
+  <option value="Tissot 天梭">
+  <option value="Swatch 斯沃琪">
+  <option value="Patek Philippe 百達翡麗">
+  <option value="Audemars Piguet 愛彼">
+  <option value="Vacheron Constantin 江詩丹頓">
+  <option value="IWC 萬國錶">
+  <option value="Jaeger-LeCoultre 積家">
+  <option value="Breguet 寶璣">
+  <option value="Blancpain 寶珀">
+  <option value="Piaget 伯爵">
+  <option value="Cartier 卡地亞">
+  <option value="Bvlgari 寶格麗">
+  <option value="Chopard 蕭邦">
+  <option value="TAG Heuer 豪雅">
+  <option value="Breitling 百年靈">
+  <option value="Hublot 宇舶">
+  <option value="Panerai 沛納海">
+  <option value="Zenith 真力時">
+  <option value="Girard-Perregaux 芝柏">
+  <option value="Ulysse Nardin 雅典錶">
+  <option value="A. Lange & Söhne 朗格">
+  <option value="Glashütte Original 格拉蘇蒂原創">
+  <option value="Nomos 諾莫斯">
+  <option value="Richard Mille 理查德米勒">
+  <option value="F.P. Journe">
+  <option value="H. Moser & Cie 摩瑟">
+  <option value="MB&F">
+  <option value="Greubel Forsey">
+  <option value="Urwerk">
+  <option value="De Bethune">
+  <option value="Seiko 精工">
+  <option value="Grand Seiko 大精工">
+  <option value="Citizen 西鐵城">
+  <option value="Casio G-Shock">
+  <option value="Hamilton 漢米頓">
+  <option value="Oris 豪利時">
+  <option value="Ball 波爾">
+  <option value="Frederique Constant 康斯登">
+  <option value="Mido 美度">
+  <option value="Rado 雷達">
+  <option value="Raymond Weil 蕾蒙威">
+  <option value="Montblanc 萬寶龍">
+  <option value="Bell & Ross">
+  <option value="Bremont">
+  <option value="Christopher Ward">
+  <option value="Parmigiani Fleurier">
+  <option value="Roger Dubuis 羅杰杜彼">
+  <option value="Franck Muller 法蘭克穆勒">
+  <option value="Corum 崑崙">
+  <option value="Ebel">
+  <option value="Enicar">
+  <option value="Serica">
+  <option value="Ming">
+</datalist>
 </body>
 </html>
