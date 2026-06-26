@@ -1,14 +1,11 @@
 name: 🔒 Deploy Firestore & Storage Rules
 
-# 只在規則檔(或 firebase.json)變動時觸發,部署 Firestore + Storage 安全規則。
-# 與 Hosting 部署分開,規則部署失敗不會影響網站上線。
+# 只在 firestore.rules / storage.rules 變動時觸發,部署 Firestore + Storage 安全規則。
+# 與 Hosting 部署分開,規則部署失敗不會影響網站上線。已於 2026-06-26 啟用並驗證可用。
 #
-# ⚠️ 啟用前提:CI 用的服務帳號
-#   firebase-adminsdk-fbsvc@barthon-watch.iam.gserviceaccount.com
-# 需要在 Google Cloud IAM 加上兩個角色(一次性):
-#   1) Firebase Rules Admin          (roles/firebaserules.admin)
-#   2) Service Usage Consumer        (roles/serviceusage.serviceUsageConsumer)
-# 未授權前此工作流程會失敗(403);可改用 Firebase Console 手動貼規則。
+# CI 服務帳號 firebase-adminsdk-fbsvc@barthon-watch.iam.gserviceaccount.com
+# 已在 GCP IAM 取得 Firebase Admin + Service Usage Consumer 角色(部署規則所需)。
+# 備援:可改用 Firebase Console 手動貼規則(Firestore 資料庫選 barthon)。
 
 on:
   push:
