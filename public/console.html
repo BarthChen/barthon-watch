@@ -253,7 +253,7 @@ onAuthStateChanged(auth, user => {
           </div>
           <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden">
             <sc-for list="{{ watchList }}" as="w" hint-placeholder-count="0">
-              <div data-key="{{ w.id }}" onClick="{{ openEdit }}" style="display:flex;align-items:center;gap:16px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer">
+              <div data-key="{{ w.id }}" onClick="{{ openEdit }}" style="display:flex;align-items:center;gap:16px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;opacity:{{ w.rowOpacity }}">
                 <div style="width:54px;height:54px;border-radius:8px;flex:none;background:#0d0e10;border:1px solid rgba(255,255,255,.08);overflow:hidden;display:grid;place-items:center">
                   <sc-if value="{{ w.hasCover }}" hint-placeholder-val="{{ false }}"><div style="{{ w.coverStyle }}"></div></sc-if>
                   <sc-if value="{{ w.noCover }}" hint-placeholder-val="{{ true }}"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a4a52" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="6"/><polyline points="12 10 12 12 13 13"/><path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 3.96"/><path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05"/></svg></sc-if>
@@ -265,6 +265,7 @@ onAuthStateChanged(auth, user => {
                 </div>
                 <div style="flex:none;width:118px"><span style="display:inline-block;white-space:nowrap;font-size:12px;color:#b0b0b6;border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:3px 9px">{{ w.condText }}</span></div>
                 <div style="flex:none;width:84px;text-align:right;white-space:nowrap;font-family:'Cormorant Garamond',serif;font-size:17px;color:#e3c98c">{{ w.price }}</div>
+                <button data-key="{{ w.id }}" onClick="{{ toggleSold }}" title="點一下切換是否已售出" style="{{ w.saleStyle }}">{{ w.saleText }}</button>
                 <button data-key="{{ w.id }}" onClick="{{ togglePublish }}" style="{{ w.statusStyle }}">{{ w.statusText }}</button>
                 <button data-key="{{ w.id }}" onClick="{{ removeWatch }}" title="刪除" style="width:34px;height:34px;flex:none;display:grid;place-items:center;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:transparent;color:#7c7c84;cursor:pointer"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
               </div>
@@ -488,6 +489,13 @@ onAuthStateChanged(auth, user => {
             <button data-val="draft" onClick="{{ setStatus }}" style="{{ pubOffStyle }}">下架</button>
           </div>
         </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 18px">
+          <div><div style="font-size:14px;color:#ececee">銷售狀態</div><div style="font-size:12px;color:#7c7c84">標記已售出後,前台會蓋上灰底「已售出」浮水印,並排到最後</div></div>
+          <div style="display:flex;gap:6px">
+            <button data-val="0" onClick="{{ setSold }}" style="{{ saleOnStyle }}">在售</button>
+            <button data-val="1" onClick="{{ setSold }}" style="{{ saleSoldStyle }}">已售出</button>
+          </div>
+        </div>
       </div>
       <div style="position:sticky;bottom:0;background:#121316;border-top:1px solid rgba(255,255,255,.08);padding:16px 24px;display:flex;gap:12px">
         <button onClick="{{ closeEdit }}" style="flex:none;padding:12px 22px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:transparent;color:#b0b0b6;font-size:14px;cursor:pointer">取消</button>
@@ -551,7 +559,9 @@ class Component extends DCLogic {
   }
   persist(){ try{ localStorage.setItem(this.KEY, JSON.stringify({layoutMode:this.state.layoutMode})); }catch(e){} }
   toastMsg(m){ this.setState({toast:m}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:null}),1900); }
-  blank(){ return {brand:"",name:"",cat:"運動",price:"NT$ 詢問",badge:"",condition:"二手",pct:"99新",set:{box:true,card:true,manual:false,strap:false},warranty:"",origin:"",ref:"",year:"",movement:"",size:"",material:"",water:"",accessories:"",desc:"",images:[],status:"published"}; }
+  blank(){ return {brand:"",name:"",cat:"運動",price:"NT$ 詢問",badge:"",condition:"二手",pct:"99新",set:{box:true,card:true,manual:false,strap:false},warranty:"",origin:"",ref:"",year:"",movement:"",size:"",material:"",water:"",accessories:"",desc:"",images:[],status:"published",sold:false,soldAt:0}; }
+  // 已售出排序：在售在前(維持原順序),已售出排最後,並依售出時間先後往後排
+  sortBySold(arr){ return arr.slice().sort((a,b)=>{ const as=a.sold?1:0, bs=b.sold?1:0; if(as!==bs) return as-bs; if(as&&bs) return (a.soldAt||0)-(b.soldAt||0); return 0; }); }
 
   setLayout = (e)=>{ const m=e.currentTarget.dataset.val; this.setState({layoutMode:m}, ()=>this.persist()); };
   go = (e)=>{ const k=e.currentTarget.dataset.key; this.setState({section:k, editing:null, editingId:null}); };
@@ -563,6 +573,8 @@ class Component extends DCLogic {
   onSet = (e)=>{ const n=e.target.name, c=e.target.checked; this.setState(s=>({editing:{...s.editing,set:{...s.editing.set,[n]:c}}})); };
   setCond = (e)=>{ const v=e.currentTarget.dataset.val; this.setState(s=>({editing:{...s.editing,condition:v}})); };
   setStatus = (e)=>{ const v=e.currentTarget.dataset.val; this.setState(s=>({editing:{...s.editing,status:v}})); };
+  // 編輯抽屜內：切換在售/已售出。標記已售出時記下售出時間(供排序)。
+  setSold = (e)=>{ const sold=e.currentTarget.dataset.val==="1"; this.setState(s=>{ const ed=s.editing||{}; const soldAt = sold ? (ed.soldAt||Date.now()) : (ed.soldAt||0); return {editing:{...ed,sold,soldAt}}; }); };
 
   addImages = async (e)=>{
     const files=[...e.target.files]; e.target.value="";
@@ -638,6 +650,20 @@ class Component extends DCLogic {
       await updateDoc(doc(window.__db,'watches',id),{status});
       this.setState(s=>({watches:s.watches.map(x=>x.id===id?{...x,status}:x)}));
     } catch(e){ console.error('togglePublish failed',e); this.toastMsg("更新失敗"); }
+  };
+  // 清單列：快速切換已售出。售出時記下時間,前台據此排到最後。
+  toggleSold = async (e)=>{
+    e.stopPropagation();
+    const id=e.currentTarget.dataset.key;
+    const w=this.state.watches.find(x=>x.id===id); if(!w) return;
+    const sold=!w.sold;
+    const soldAt = sold ? (w.soldAt||Date.now()) : (w.soldAt||0);
+    try {
+      const { doc, updateDoc } = window.__fs;
+      await updateDoc(doc(window.__db,'watches',id),{sold,soldAt});
+      this.setState(s=>({watches:s.watches.map(x=>x.id===id?{...x,sold,soldAt}:x)}));
+      this.toastMsg(sold?"已標記售出":"已恢復在售");
+    } catch(e){ console.error('toggleSold failed',e); this.toastMsg("更新失敗"); }
   };
 
   setSearch = (e)=> this.setState({search:e.target.value});
@@ -755,16 +781,19 @@ class Component extends DCLogic {
 
     const pubPill="display:inline-flex;align-items:center;white-space:nowrap;padding:6px 13px;border-radius:999px;font-size:12px;cursor:pointer;flex:none;border:1px solid rgba(91,191,138,.35);background:rgba(91,191,138,.12);color:#5bbf8a";
     const draftPill="display:inline-flex;align-items:center;white-space:nowrap;padding:6px 13px;border-radius:999px;font-size:12px;cursor:pointer;flex:none;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#8a8a92";
+    const soldPill="display:inline-flex;align-items:center;white-space:nowrap;padding:6px 13px;border-radius:999px;font-size:12px;cursor:pointer;flex:none;border:1px solid rgba(224,102,77,.4);background:rgba(224,102,77,.14);color:#e0664d";
+    const onSalePill="display:inline-flex;align-items:center;white-space:nowrap;padding:6px 13px;border-radius:999px;font-size:12px;cursor:pointer;flex:none;border:1px solid rgba(255,255,255,.12);background:transparent;color:#8a8a92";
 
     const bgStyle=(url)=>({width:"100%",height:"100%",backgroundImage:'url("'+url+'")',backgroundSize:"cover",backgroundPosition:"center"});
     const imgPreview=(url)=> url ? {width:"100%",height:"220px",borderRadius:"8px",marginBottom:"10px",border:"1px solid rgba(255,255,255,.08)",backgroundImage:'url("'+url+'")',backgroundSize:"cover",backgroundPosition:"center"} : null;
-    const toView=(w)=>{ const has=!!(w.images&&w.images.length); return {id:w.id,brand:w.brand,name:w.name,cat:w.cat,price:w.price,badge:w.badge,hasBadge:!!w.badge,coverStyle:has?bgStyle(w.images[0]):null,hasCover:has,noCover:!has,metaLine:w.cat+"・"+(w.year||"年份未填"),condText:this.condText(w),statusText:w.status==="published"?"已上架":"下架中",statusStyle:w.status==="published"?pubPill:draftPill}; };
+    const toView=(w)=>{ const has=!!(w.images&&w.images.length); return {id:w.id,brand:w.brand,name:w.name,cat:w.cat,price:w.price,badge:w.badge,hasBadge:!!w.badge,coverStyle:has?bgStyle(w.images[0]):null,hasCover:has,noCover:!has,metaLine:w.cat+"・"+(w.year||"年份未填"),condText:this.condText(w),statusText:w.status==="published"?"已上架":"下架中",statusStyle:w.status==="published"?pubPill:draftPill,sold:!!w.sold,rowOpacity:w.sold?"0.6":"1",saleText:w.sold?"已售出":"在售",saleStyle:w.sold?soldPill:onSalePill}; };
 
-    let list=s.watches.map(toView);
-    if(s.statusFilter==="published") list=list.filter(()=>true), list=s.watches.filter(w=>w.status==="published").map(toView);
-    else if(s.statusFilter==="draft") list=s.watches.filter(w=>w.status==="draft").map(toView);
+    let raw=s.watches.slice();
+    if(s.statusFilter==="published") raw=raw.filter(w=>w.status==="published");
+    else if(s.statusFilter==="draft") raw=raw.filter(w=>w.status==="draft");
     const q=s.search.trim().toLowerCase();
-    if(q) list=list.filter(w=>(w.brand+" "+w.name).toLowerCase().includes(q));
+    if(q) raw=raw.filter(w=>((w.brand||"")+" "+(w.name||"")).toLowerCase().includes(q));
+    let list=this.sortBySold(raw).map(toView);
 
     const chip=(on)=>"padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid "+(on?"#c8a667":"rgba(255,255,255,.12)")+";background:"+(on?"rgba(200,166,103,.14)":"transparent")+";color:"+(on?"#e3c98c":"#b0b0b6");
     const statusChips=[["all","全部"],["published","已上架"],["draft","下架中"]].map(([val,label])=>({val,label,style:chip(s.statusFilter===val)}));
@@ -787,6 +816,7 @@ class Component extends DCLogic {
     const isUsed=ed.condition==="二手";
     const condBtn=(on)=>"flex:1;padding:10px;border-radius:7px;font-size:14px;cursor:pointer;border:1px solid "+(on?"#c8a667":"rgba(255,255,255,.14)")+";background:"+(on?"rgba(200,166,103,.14)":"transparent")+";color:"+(on?"#e3c98c":"#b0b0b6");
     const segBtn=(on,kind)=>{ const c=kind==="pub"?"#5bbf8a":"#8a8a92"; const bg=kind==="pub"?"rgba(91,191,138,.14)":"rgba(255,255,255,.06)"; return "padding:8px 18px;border-radius:7px;font-size:13px;cursor:pointer;border:1px solid "+(on?(kind==="pub"?"rgba(91,191,138,.4)":"rgba(255,255,255,.2)"):"transparent")+";background:"+(on?bg:"transparent")+";color:"+(on?c:"#6f6a60"); };
+    const saleBtn=(on,kind)=>{ const c=kind==="sold"?"#e0664d":"#5bbf8a"; const br=kind==="sold"?"rgba(224,102,77,.4)":"rgba(91,191,138,.4)"; const bg=kind==="sold"?"rgba(224,102,77,.14)":"rgba(91,191,138,.14)"; return "padding:8px 18px;border-radius:7px;font-size:13px;cursor:pointer;border:1px solid "+(on?br:"transparent")+";background:"+(on?bg:"transparent")+";color:"+(on?c:"#6f6a60"); };
     const edImages=(ed.images||[]).map((url,i)=>({bg:{position:"absolute",inset:0,backgroundImage:'url("'+url+'")',backgroundSize:"cover",backgroundPosition:"center"},cover:i===0,idx:i}));
 
     const statsVals=this.computeStats();
@@ -803,7 +833,7 @@ class Component extends DCLogic {
       statCards, recentInq, inqList, inqEmpty:inqList.length===0,
       watchList:list, watchCount:s.watches.length, watchEmpty:list.length===0,
       search:s.search, setSearch:this.setSearch, statusChips, setStatusFilter:this.setStatusFilter,
-      togglePublish:this.togglePublish, removeWatch:this.removeWatch,
+      togglePublish:this.togglePublish, toggleSold:this.toggleSold, removeWatch:this.removeWatch,
       loading:s.loading,
       copy:s.copy, onCopy:this.onCopy, saveCopy:this.saveCopy,
       uploadHeroImg:this.uploadHeroImg, uploadAboutImg:this.uploadAboutImg,
@@ -817,10 +847,11 @@ class Component extends DCLogic {
       setInqStatus:this.setInqStatus, removeInq:this.removeInq,
       hasEditing:!!s.editing, drawerTitle:s.editingId?"編輯腕錶":"新增腕錶",
       ed, edImages, edSet:ed.set||{}, edIsUsed:isUsed,
-      onField:this.onField, onSet:this.onSet, setCond:this.setCond, setStatus:this.setStatus,
+      onField:this.onField, onSet:this.onSet, setCond:this.setCond, setStatus:this.setStatus, setSold:this.setSold,
       addImages:this.addImages, removeImage:this.removeImage, setCover:this.setCover, save:this.save,
       condNewStyle:condBtn(ed.condition==="全新"), condUsedStyle:condBtn(isUsed),
       pubOnStyle:segBtn(ed.status==="published","pub"), pubOffStyle:segBtn(ed.status==="draft","draft"),
+      saleOnStyle:saleBtn(!ed.sold,"on"), saleSoldStyle:saleBtn(!!ed.sold,"sold"),
       toast:s.toast
     };
   }

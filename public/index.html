@@ -202,6 +202,12 @@
     background:rgba(8,8,10,.78);border:1px solid var(--gold-dim);
     font-size:11px;letter-spacing:.1em;color:var(--gold-bright);padding:5px 11px;
   }
+  /* 已售出：灰底遮罩 + 浮水印印章 */
+  .sold-mask{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:rgba(10,10,12,.55);backdrop-filter:grayscale(1) brightness(.75)}
+  .sold-stamp{transform:rotate(-12deg);border:3px solid rgba(255,255,255,.85);color:rgba(255,255,255,.92);font-family:var(--serif-tc);font-weight:600;font-size:26px;letter-spacing:.18em;padding:8px 22px;border-radius:6px;text-shadow:0 2px 8px rgba(0,0,0,.5);box-shadow:0 2px 14px rgba(0,0,0,.45)}
+  .card.is-sold .card-media .photo img{filter:grayscale(.9)}
+  .card.is-sold .card-price{color:var(--muted)}
+  .d-media .sold-mask .sold-stamp{font-size:40px;padding:12px 34px}
   .card-body{padding:20px 22px 24px;display:flex;flex-direction:column;flex:1}
   .card-brand{font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
   .card-name{font-family:var(--serif-tc);font-weight:500;font-size:19px;color:var(--ink);line-height:1.35;margin-bottom:8px}
@@ -617,7 +623,7 @@
           const set=w.set||{};
           const cond=w.condition==="全新"?"全新":((set.box&&set.card)?((w.pct||"")+"・全套"):(w.pct||""));
           const meta=[w.year,cond].filter(Boolean).join("・")||"現貨";
-          WATCHES.push({id:w.id,brand:w.brand,name:w.name,cat:w.cat,badge:w.badge||"",price:w.price,meta,ref:w.ref,year:w.year,movement:w.movement,size:w.size,material:w.material,water:w.water,accessories:w.accessories,desc:w.desc,imgs:w.images||[]});
+          WATCHES.push({id:w.id,brand:w.brand,name:w.name,cat:w.cat,badge:w.badge||"",price:w.price,meta,ref:w.ref,year:w.year,movement:w.movement,size:w.size,material:w.material,water:w.water,accessories:w.accessories,desc:w.desc,imgs:w.images||[],sold:!!w.sold,soldAt:w.soldAt||0});
         });
       }
       if(cSnap.exists()) _applyCopy(cSnap.data());
@@ -721,7 +727,9 @@
   }
   function renderGrid(){
     grid.innerHTML = "";
-    const list = WATCHES.filter(w=>(activeBrand==="全部"||w.brand===activeBrand)&&(activeCat==="全部"||w.cat===activeCat));
+    const list = WATCHES.filter(w=>(activeBrand==="全部"||w.brand===activeBrand)&&(activeCat==="全部"||w.cat===activeCat))
+      // 已售出永遠排到最後,並依售出時間先後往後排;在售維持原順序
+      .sort((a,b)=>{ const as=a.sold?1:0, bs=b.sold?1:0; if(as!==bs) return as-bs; if(as&&bs) return (a.soldAt||0)-(b.soldAt||0); return 0; });
     if(!list.length){
       grid.innerHTML = `<p class="grid-note" style="grid-column:1/-1;margin:40px 0">此分類目前沒有現貨,歡迎私訊預約調貨。</p>`;
       return;
@@ -730,10 +738,12 @@
       const card = document.createElement("article");
       card.className = "card";
       card.style.transitionDelay = (i%4*60)+"ms";
+      if(w.sold) card.classList.add("is-sold");
       card.innerHTML = `
         <div class="card-media">
           ${w.badge?`<span class="card-badge">${w.badge}</span>`:""}
           ${photoURL(w.imgs&&w.imgs[0], "", `${w.brand} 照片`)}
+          ${w.sold?`<div class="sold-mask"><span class="sold-stamp">已售出</span></div>`:""}
         </div>
         <div class="card-body">
           <div class="card-brand">${w.brand}</div>
@@ -777,6 +787,7 @@
         <h3>${w.name}</h3>
         <div class="d-price">${fmtPrice(w.price)}</div>
         <div class="d-badges">
+          ${w.sold?`<span class="d-badge" style="border-color:rgba(224,102,77,.5);color:#e0664d">已售出</span>`:""}
           ${w.badge?`<span class="d-badge">${w.badge}</span>`:""}
           <span class="d-badge">正品保證</span><span class="d-badge">現貨實拍</span><span class="d-badge">可面交驗錶</span>
         </div>
@@ -792,6 +803,11 @@
     detail.classList.add("open");
     detail.setAttribute("aria-hidden","false");
     document.body.style.overflow = "hidden";
+    // 已售出:主圖蓋上灰底「已售出」浮水印
+    if(w.sold){
+      const main = detailInner.querySelector(".d-media .g-main");
+      if(main){ const m=document.createElement("div"); m.className="sold-mask"; m.innerHTML='<span class="sold-stamp">已售出</span>'; main.appendChild(m); }
+    }
     // 點圖放大:燈箱以這支錶的所有實拍圖為相簿
     const gallery = (w.imgs||[]).filter(Boolean);
     detailInner.querySelectorAll(".d-media .photo img").forEach((img)=>{
