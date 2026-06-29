@@ -277,15 +277,25 @@
   .reveal{opacity:0;transform:translateY(26px);transition:opacity .9s ease,transform .9s cubic-bezier(.22,.61,.36,1)}
   .reveal.in{opacity:1;transform:translateY(0)}
 
-  /* ---- filter bar (放在腕錶上方) ---- */
-  .filterbar{display:flex;flex-direction:column;gap:13px;margin-bottom:30px;padding-bottom:24px;border-bottom:1px solid var(--line)}
-  .fgroup{display:flex;align-items:flex-start;gap:16px}
-  .fgroup-label{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:500;width:56px;flex:none;padding-top:8px}
-  .fgroup .filters{display:flex;flex-direction:row;flex-wrap:wrap;gap:8px;flex:1}
-  .fgroup .chip{padding:7px 15px;font-size:13px;letter-spacing:.04em}
-  .filterbar-foot{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:5px}
+  /* ---- filter bar (放在腕錶上方,下拉選單) ---- */
+  .filterbar{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;flex-wrap:wrap;margin-bottom:38px}
+  .filter-controls{display:flex;gap:14px;flex-wrap:wrap}
+  .fsel{display:flex;flex-direction:column;gap:7px}
+  .fsel-cap{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:500;padding-left:2px}
+  .fsel select{
+    appearance:none;-webkit-appearance:none;-moz-appearance:none;
+    background-color:var(--panel);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23c8a667' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 13px center;background-size:12px;
+    border:1px solid var(--line-strong);border-radius:2px;color:var(--ink-soft);
+    font-family:var(--sans-tc);font-size:14px;letter-spacing:.02em;
+    padding:11px 38px 11px 15px;cursor:pointer;transition:border-color .25s,color .25s;min-width:128px;
+  }
+  .fsel select:hover,.fsel select:focus{border-color:var(--gold);color:var(--gold-bright);outline:none}
+  .fsel select option{background:#15151a;color:var(--ink)}
+  .filter-meta{display:flex;align-items:center;gap:18px;padding-bottom:3px;white-space:nowrap}
   .result-count{font-size:13px;color:var(--muted);letter-spacing:.05em}
-  .filter-reset{background:none;border:0;color:var(--muted);font-size:12px;letter-spacing:.06em;cursor:pointer;padding:4px 0;transition:color .25s}
+  .filter-reset{background:none;border:0;color:var(--muted);font-size:13px;letter-spacing:.04em;cursor:pointer;padding:4px 0;transition:color .25s}
   .filter-reset:hover{color:var(--gold-bright)}
 
   /* ---- detail overlay ---- */
@@ -364,8 +374,10 @@
   @media (max-width:560px){
     .wrap{padding:0 20px}
     .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-    .fgroup{gap:10px}
-    .fgroup-label{width:100%;padding-top:0}
+    .filterbar{gap:16px}
+    .filter-controls{gap:10px 12px}
+    .fsel{flex:1;min-width:120px}
+    .fsel select{width:100%;min-width:0}
     .card-media .photo{height:190px}
     .trust-inner{grid-template-columns:1fr}
     .trust-item{border-left:0;border-top:1px solid var(--line)}
@@ -461,14 +473,16 @@
       </div>
     </div>
     <div class="filterbar reveal">
-      <div class="fgroup"><span class="fgroup-label">類型</span><div class="filters" id="catFilters"></div></div>
-      <div class="fgroup"><span class="fgroup-label">品牌</span><div class="filters" id="brandFilters"></div></div>
-      <div class="fgroup"><span class="fgroup-label">成色</span><div class="filters" id="condFilters"></div></div>
-      <div class="fgroup"><span class="fgroup-label">供貨</span><div class="filters" id="availFilters"></div></div>
-      <div class="fgroup"><span class="fgroup-label">排序</span><div class="filters" id="sortFilters"></div></div>
-      <div class="filterbar-foot">
+      <div class="filter-controls">
+        <label class="fsel"><span class="fsel-cap">類型</span><select id="catFilters"></select></label>
+        <label class="fsel"><span class="fsel-cap">品牌</span><select id="brandFilters"></select></label>
+        <label class="fsel"><span class="fsel-cap">成色</span><select id="condFilters"></select></label>
+        <label class="fsel"><span class="fsel-cap">供貨</span><select id="availFilters"></select></label>
+        <label class="fsel"><span class="fsel-cap">排序</span><select id="sortFilters"></select></label>
+      </div>
+      <div class="filter-meta">
         <span class="result-count" id="resultCount"></span>
-        <button class="filter-reset" id="filterReset">✕ 清除全部篩選</button>
+        <button class="filter-reset" id="filterReset">清除</button>
       </div>
     </div>
     <div class="grid" id="grid"></div>
@@ -732,23 +746,26 @@
   let activeAvail = "全部";
   let activeSort = "預設";
 
-  function renderChips(host, items, current, onPick){
-    if(!host) return;
-    host.innerHTML = "";
-    items.forEach(v=>{
-      const b = document.createElement("button");
-      b.className = "chip" + (v===current?" active":"");
-      b.textContent = v;
-      b.onclick = ()=>onPick(v);
-      host.appendChild(b);
-    });
+  // 以下拉選單呈現篩選(品牌很多時比一排排 chips 更協調)
+  function setSelect(sel, items, val){
+    if(!sel) return;
+    sel.innerHTML = "";
+    items.forEach(v=>{ const o=document.createElement("option"); o.value=v; o.textContent=v; sel.appendChild(o); });
+    sel.value = val;
   }
   function renderFilters(){
-    renderChips(catFilters, CATS, activeCat, v=>{activeCat=v;renderFilters();renderGrid();});
-    renderChips(brandFilters, BRANDS, activeBrand, v=>{activeBrand=v;renderFilters();renderGrid();});
-    renderChips(condFilters, CONDS, activeCond, v=>{activeCond=v;renderFilters();renderGrid();});
-    renderChips(availFilters, AVAILS, activeAvail, v=>{activeAvail=v;renderFilters();renderGrid();});
-    renderChips(sortFilters, SORTS, activeSort, v=>{activeSort=v;renderFilters();renderGrid();});
+    setSelect(catFilters, CATS, activeCat);
+    setSelect(brandFilters, BRANDS, activeBrand);
+    setSelect(condFilters, CONDS, activeCond);
+    setSelect(availFilters, AVAILS, activeAvail);
+    setSelect(sortFilters, SORTS, activeSort);
+  }
+  function wireFilters(){
+    if(catFilters) catFilters.onchange = e=>{ activeCat=e.target.value; renderGrid(); };
+    if(brandFilters) brandFilters.onchange = e=>{ activeBrand=e.target.value; renderGrid(); };
+    if(condFilters) condFilters.onchange = e=>{ activeCond=e.target.value; renderGrid(); };
+    if(availFilters) availFilters.onchange = e=>{ activeAvail=e.target.value; renderGrid(); };
+    if(sortFilters) sortFilters.onchange = e=>{ activeSort=e.target.value; renderGrid(); };
   }
   function resetFilters(){
     activeBrand="全部"; activeCat="全部"; activeCond="全部"; activeAvail="全部"; activeSort="預設";
@@ -913,6 +930,7 @@
   const io2 = new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io2.unobserve(e.target);}});},{threshold:.1});
 
   renderFilters();
+  wireFilters();
   renderGrid();
   { const rb=document.getElementById("filterReset"); if(rb) rb.onclick=resetFilters; }
 
