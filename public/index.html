@@ -184,7 +184,7 @@
   .chip.active{background:var(--gold);color:#100d07;border-color:var(--gold);font-weight:500}
 
   /* ---- watch grid ---- */
-  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:24px}
   .card{
     background:var(--panel);border:1px solid var(--line);
     display:flex;flex-direction:column;transition:transform .45s cubic-bezier(.22,.61,.36,1),border-color .45s,box-shadow .45s;
@@ -277,18 +277,16 @@
   .reveal{opacity:0;transform:translateY(26px);transition:opacity .9s ease,transform .9s cubic-bezier(.22,.61,.36,1)}
   .reveal.in{opacity:1;transform:translateY(0)}
 
-  /* ---- filter sidebar ---- */
-  .collection-layout{display:grid;grid-template-columns:208px 1fr;gap:42px;align-items:start}
-  .filter-aside{position:sticky;top:96px;display:flex;flex-direction:column;gap:22px}
-  .fgroup{display:flex;flex-direction:column;gap:11px}
-  .fgroup-label{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
-  .fgroup .filters{flex-direction:column;align-items:stretch;gap:7px}
-  .fgroup .chip{width:100%;text-align:left;padding:9px 14px;font-size:13px;letter-spacing:.04em}
-  .filter-reset{margin-top:2px;background:none;border:0;color:var(--muted);font-size:12px;letter-spacing:.06em;cursor:pointer;text-align:left;padding:4px 0;transition:color .25s}
-  .filter-reset:hover{color:var(--gold-bright)}
-  .collection-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;min-height:22px}
+  /* ---- filter bar (放在腕錶上方) ---- */
+  .filterbar{display:flex;flex-direction:column;gap:13px;margin-bottom:30px;padding-bottom:24px;border-bottom:1px solid var(--line)}
+  .fgroup{display:flex;align-items:flex-start;gap:16px}
+  .fgroup-label{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:500;width:56px;flex:none;padding-top:8px}
+  .fgroup .filters{display:flex;flex-direction:row;flex-wrap:wrap;gap:8px;flex:1}
+  .fgroup .chip{padding:7px 15px;font-size:13px;letter-spacing:.04em}
+  .filterbar-foot{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:5px}
   .result-count{font-size:13px;color:var(--muted);letter-spacing:.05em}
-  .collection-main .grid{grid-template-columns:repeat(auto-fill,minmax(248px,1fr))}
+  .filter-reset{background:none;border:0;color:var(--muted);font-size:12px;letter-spacing:.06em;cursor:pointer;padding:4px 0;transition:color .25s}
+  .filter-reset:hover{color:var(--gold-bright)}
 
   /* ---- detail overlay ---- */
   .card{cursor:pointer}
@@ -349,7 +347,6 @@
   }
 
   @media (max-width:1080px){
-    .grid{grid-template-columns:repeat(2,1fr)}
     .steps{grid-template-columns:repeat(2,1fr)}
     .trust-inner{grid-template-columns:repeat(2,1fr)}
     .trust-item:nth-child(3){border-left:0}
@@ -363,17 +360,12 @@
     .about-grid{grid-template-columns:1fr;gap:40px}
     .about-figure{order:-1}
     .sec-head{flex-direction:column;align-items:flex-start}
-    /* 篩選欄改為頂部橫向 */
-    .collection-layout{grid-template-columns:1fr;gap:28px}
-    .filter-aside{position:static;top:auto;flex-direction:row;flex-wrap:wrap;gap:18px 30px}
-    .fgroup{flex:1;min-width:140px}
-    .fgroup .filters{flex-direction:row;flex-wrap:wrap}
-    .fgroup .chip{width:auto}
-    .filter-reset{flex-basis:100%}
   }
   @media (max-width:560px){
     .wrap{padding:0 20px}
-    .grid,.collection-main .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .fgroup{gap:10px}
+    .fgroup-label{width:100%;padding-top:0}
     .card-media .photo{height:190px}
     .trust-inner{grid-template-columns:1fr}
     .trust-item{border-left:0;border-top:1px solid var(--line)}
@@ -468,21 +460,19 @@
         <p>每支皆為現貨,價格可議。點選錶款即可看完整介紹、規格與多張實拍。</p>
       </div>
     </div>
-    <div class="collection-layout reveal">
-      <aside class="filter-aside">
-        <div class="fgroup"><span class="fgroup-label">類型</span><div class="filters" id="catFilters"></div></div>
-        <div class="fgroup"><span class="fgroup-label">品牌</span><div class="filters" id="brandFilters"></div></div>
-        <div class="fgroup"><span class="fgroup-label">成色</span><div class="filters" id="condFilters"></div></div>
-        <div class="fgroup"><span class="fgroup-label">供貨狀態</span><div class="filters" id="availFilters"></div></div>
-        <div class="fgroup"><span class="fgroup-label">排序</span><div class="filters" id="sortFilters"></div></div>
+    <div class="filterbar reveal">
+      <div class="fgroup"><span class="fgroup-label">類型</span><div class="filters" id="catFilters"></div></div>
+      <div class="fgroup"><span class="fgroup-label">品牌</span><div class="filters" id="brandFilters"></div></div>
+      <div class="fgroup"><span class="fgroup-label">成色</span><div class="filters" id="condFilters"></div></div>
+      <div class="fgroup"><span class="fgroup-label">供貨</span><div class="filters" id="availFilters"></div></div>
+      <div class="fgroup"><span class="fgroup-label">排序</span><div class="filters" id="sortFilters"></div></div>
+      <div class="filterbar-foot">
+        <span class="result-count" id="resultCount"></span>
         <button class="filter-reset" id="filterReset">✕ 清除全部篩選</button>
-      </aside>
-      <div class="collection-main">
-        <div class="collection-bar"><span class="result-count" id="resultCount"></span></div>
-        <div class="grid" id="grid"></div>
-        <p class="grid-note">＊ 以上為本期現貨,庫存持續更新。想找特定型號?歡迎直接私訊預約調貨。</p>
       </div>
     </div>
+    <div class="grid" id="grid"></div>
+    <p class="grid-note">＊ 以上為本期現貨,庫存持續更新。想找特定型號?歡迎直接私訊預約調貨。</p>
   </div>
 </section>
 
