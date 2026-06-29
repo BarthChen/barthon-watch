@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /console
+
+Sitemap: https://barthon-watch.web.app/sitemap.xml

@@ -4,6 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BarthON 鐘錶｜進口腕錶・藏家精選</title>
+<meta name="description" content="BarthON 鐘錶 — 精選進口二手與全新腕錶，勞力士、帝舵、歐米茄、浪琴等品牌現貨實拍，正品保證、可面交驗錶。歡迎私訊詢問。">
+<meta name="keywords" content="進口腕錶,二手錶,名錶,勞力士,Rolex,帝舵,Tudor,歐米茄,Omega,浪琴,手錶買賣,BarthON 鐘錶">
+<meta name="robots" content="index, follow">
+<meta name="google-site-verification" content="Kid4yuLqpreg4HTVXY_JfSpes9X1puuqbORh4Q4Ieus" />
+<link rel="canonical" href="https://barthon-watch.web.app/">
+<!-- Open Graph / 社群分享 -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BarthON 鐘錶">
+<meta property="og:title" content="BarthON 鐘錶｜進口腕錶・藏家精選">
+<meta property="og:description" content="精選進口二手與全新腕錶，現貨實拍、正品保證、可面交驗錶。">
+<meta property="og:url" content="https://barthon-watch.web.app/">
+<meta property="og:locale" content="zh_TW">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BarthON 鐘錶｜進口腕錶・藏家精選">
+<meta name="twitter:description" content="精選進口二手與全新腕錶，現貨實拍、正品保證、可面交驗錶。">
+<!-- 結構化資料：商家 -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Store","name":"BarthON 鐘錶","description":"精選進口二手與全新腕錶，現貨實拍、正品保證、可面交驗錶。","url":"https://barthon-watch.web.app/","image":"https://barthon-watch.web.app/","priceRange":"$$$"}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -297,6 +316,22 @@
     .d-media .g-main{height:280px}
     .d-info{padding:32px 26px}
   }
+  /* ---- lightbox (圖片放大) ---- */
+  .d-media .photo{cursor:zoom-in}
+  .lightbox{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;background:rgba(2,2,4,.94);backdrop-filter:blur(6px)}
+  .lightbox.open{display:flex;animation:fade .25s ease}
+  .lb-img{max-width:92vw;max-height:88vh;object-fit:contain;box-shadow:0 20px 80px rgba(0,0,0,.6);user-select:none}
+  .lb-btn{position:absolute;width:52px;height:52px;display:grid;place-items:center;background:rgba(18,18,22,.7);border:1px solid var(--line-strong);border-radius:50%;color:var(--ink);cursor:pointer;transition:all .25s;z-index:2}
+  .lb-btn:hover{border-color:var(--gold);color:var(--gold-bright)}
+  .lb-btn i{width:24px;height:24px}
+  .lb-close{top:20px;right:20px}
+  .lb-prev{left:24px;top:50%;transform:translateY(-50%)}
+  .lb-next{right:24px;top:50%;transform:translateY(-50%)}
+  .lb-count{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);font-size:13px;letter-spacing:.1em;color:var(--ink-soft);background:rgba(18,18,22,.7);padding:6px 14px;border-radius:20px}
+  @media (max-width:760px){
+    .lb-btn{width:44px;height:44px}.lb-btn i{width:20px;height:20px}
+    .lb-prev{left:10px}.lb-next{right:10px}.lb-close{top:14px;right:14px}
+  }
 
   @media (max-width:1080px){
     .grid{grid-template-columns:repeat(2,1fr)}
@@ -507,6 +542,15 @@
   </div>
 </div>
 
+<!-- lightbox 圖片放大 -->
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <button class="lb-btn lb-close" id="lbClose" aria-label="關閉"><i data-lucide="x"></i></button>
+  <button class="lb-btn lb-prev" id="lbPrev" aria-label="上一張"><i data-lucide="chevron-left"></i></button>
+  <img class="lb-img" id="lbImg" alt="">
+  <button class="lb-btn lb-next" id="lbNext" aria-label="下一張"><i data-lucide="chevron-right"></i></button>
+  <div class="lb-count" id="lbCount"></div>
+</div>
+
 <footer class="site">
   <div class="wrap foot-grid">
     <div class="foot-brand">
@@ -579,6 +623,27 @@
       if(cSnap.exists()) _applyCopy(cSnap.data());
       BRANDS.length=0; BRANDS.push("全部",...Array.from(new Set(WATCHES.map(w=>w.brand))));
       renderFilters(); renderGrid();
+      // ---- 瀏覽統計:記錄到 stats/{今天} ----
+      try {
+        const todayKey = ()=>{ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+        window.__track = async (type, watchId)=>{
+          try {
+            const day = todayKey();
+            const ref = fs.doc(db,'stats',day);
+            if(type==='click' && watchId){
+              // 巢狀物件 + merge：正確累加 clicks[watchId];點號 key 會被當字面欄位名,故不可用。
+              await fs.setDoc(ref, { date:day, updated:fs.serverTimestamp(), clicks:{ [watchId]:fs.increment(1) } }, {merge:true});
+            }
+          } catch(err){ /* 統計失敗不影響瀏覽 */ }
+        };
+        // 進站計數:每次載入算一次瀏覽(views);同一裝置當天首次再算一位訪客(visitors)
+        const day = todayKey();
+        const ref = fs.doc(db,'stats',day);
+        const payload = { date:day, updated:fs.serverTimestamp(), views:fs.increment(1) };
+        let lastVisit = null; try{ lastVisit = localStorage.getItem('barthon_lastVisit'); }catch(e){}
+        if(lastVisit !== day){ payload.visitors = fs.increment(1); try{ localStorage.setItem('barthon_lastVisit', day); }catch(e){} }
+        fs.setDoc(ref, payload, {merge:true}).catch(()=>{});
+      } catch(e){}
     } catch(e){ console.warn("Firestore load failed:",e); }
     // 不論腕錶是否載入成功,只要 db 就緒就掛上詢問表單
     if(db && collection && addDoc) wireInquiryForm(db, collection, addDoc);
@@ -694,6 +759,7 @@
   function openDetail(id){
     const w = WATCHES.find(x=>x.id===id);
     if(!w) return;
+    if(window.__track) window.__track('click', id); // 記錄這支錶被點擊
     const specs = [
       ["型號 Ref.", w.ref],["年份 Year", w.year],["機芯 Movement", w.movement],
       ["錶徑 Size", w.size],["材質 Case", w.material],["防水 W.R.", w.water],
@@ -726,6 +792,14 @@
     detail.classList.add("open");
     detail.setAttribute("aria-hidden","false");
     document.body.style.overflow = "hidden";
+    // 點圖放大:燈箱以這支錶的所有實拍圖為相簿
+    const gallery = (w.imgs||[]).filter(Boolean);
+    detailInner.querySelectorAll(".d-media .photo img").forEach((img)=>{
+      img.addEventListener("click", ()=>{
+        const idx = Math.max(0, gallery.indexOf(img.getAttribute("src")));
+        if(gallery.length) openLightbox(gallery, idx);
+      });
+    });
     detailInner.querySelectorAll("[data-close]").forEach(a=>a.addEventListener("click", closeDetail));
     const inqBtn = detailInner.querySelector("[data-inquire]");
     if(inqBtn) inqBtn.addEventListener("click", ()=>{ if(window.__setInquiryWatch) window.__setInquiryWatch(w.brand+" "+w.name); });
@@ -738,7 +812,35 @@
   }
   document.getElementById("detailScrim").addEventListener("click", closeDetail);
   document.getElementById("detailClose").addEventListener("click", closeDetail);
-  document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeDetail(); });
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !document.getElementById("lightbox").classList.contains("open")) closeDetail(); });
+
+  // ---- lightbox 圖片放大 ----
+  const lightbox = document.getElementById("lightbox");
+  const lbImg = document.getElementById("lbImg");
+  const lbCount = document.getElementById("lbCount");
+  let lbList = [], lbIdx = 0;
+  function lbShow(){ lbImg.src = lbList[lbIdx]; lbCount.textContent = (lbIdx+1)+" / "+lbList.length; }
+  function openLightbox(list, idx){
+    lbList = list; lbIdx = idx||0;
+    const multi = lbList.length>1;
+    document.getElementById("lbPrev").style.display = multi?"grid":"none";
+    document.getElementById("lbNext").style.display = multi?"grid":"none";
+    lbCount.style.display = multi?"block":"none";
+    lbShow();
+    lightbox.classList.add("open"); lightbox.setAttribute("aria-hidden","false");
+  }
+  function closeLightbox(){ lightbox.classList.remove("open"); lightbox.setAttribute("aria-hidden","true"); }
+  function lbStep(d){ if(!lbList.length) return; lbIdx = (lbIdx + d + lbList.length) % lbList.length; lbShow(); }
+  document.getElementById("lbClose").addEventListener("click", closeLightbox);
+  document.getElementById("lbPrev").addEventListener("click", e=>{ e.stopPropagation(); lbStep(-1); });
+  document.getElementById("lbNext").addEventListener("click", e=>{ e.stopPropagation(); lbStep(1); });
+  lightbox.addEventListener("click", e=>{ if(e.target===lightbox) closeLightbox(); });
+  document.addEventListener("keydown", e=>{
+    if(!lightbox.classList.contains("open")) return;
+    if(e.key==="Escape"){ closeLightbox(); e.stopPropagation(); }
+    else if(e.key==="ArrowLeft") lbStep(-1);
+    else if(e.key==="ArrowRight") lbStep(1);
+  });
 
   // reveal observers
   const io = new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}});},{threshold:.12});

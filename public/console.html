@@ -97,6 +97,7 @@ onAuthStateChanged(auth, user => {
       </div>
       <nav style="flex:1;padding:16px 14px;display:flex;flex-direction:column;gap:4px">
         <button data-key="dashboard" onClick="{{ go }}" style="{{ navDash.style }}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="14" rx="1"/></svg><span>儀表板</span></button>
+        <button data-key="stats" onClick="{{ go }}" style="{{ navStats.style }}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="7" y="13" width="3" height="5" rx="1"/><rect x="12" y="9" width="3" height="9" rx="1"/><rect x="17" y="5" width="3" height="13" rx="1"/></svg><span>瀏覽統計</span></button>
         <button data-key="watches" onClick="{{ go }}" style="{{ navWatch.style }}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="6"/><polyline points="12 10 12 12 13 13"/><path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 3.96"/><path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05"/></svg><span>腕錶管理</span></button>
         <button data-key="inquiries" onClick="{{ go }}" style="{{ navInq.style }}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>詢問訊息</span></button>
         <button data-key="copy" onClick="{{ go }}" style="{{ navCopy.style }}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg><span>網站文案</span></button>
@@ -119,6 +120,7 @@ onAuthStateChanged(auth, user => {
       <div style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:21px;letter-spacing:.04em;color:#ececee;flex:none">Barth<span style="color:#c8a667">ON</span> <span style="font-size:11px;color:#7c7c84;letter-spacing:.2em">後台</span></div>
       <nav style="display:flex;gap:4px;flex:1;height:100%;align-items:stretch">
         <button data-key="dashboard" onClick="{{ go }}" style="{{ navDash.tabStyle }}"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="14" rx="1"/></svg><span>儀表板</span></button>
+        <button data-key="stats" onClick="{{ go }}" style="{{ navStats.tabStyle }}"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="7" y="13" width="3" height="5" rx="1"/><rect x="12" y="9" width="3" height="9" rx="1"/><rect x="17" y="5" width="3" height="13" rx="1"/></svg><span>瀏覽統計</span></button>
         <button data-key="watches" onClick="{{ go }}" style="{{ navWatch.tabStyle }}"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="6"/><polyline points="12 10 12 12 13 13"/><path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 3.96"/><path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05"/></svg><span>腕錶管理</span></button>
         <button data-key="inquiries" onClick="{{ go }}" style="{{ navInq.tabStyle }}"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>詢問訊息</span></button>
         <button data-key="copy" onClick="{{ go }}" style="{{ navCopy.tabStyle }}"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg><span>網站文案</span></button>
@@ -166,6 +168,62 @@ onAuthStateChanged(auth, user => {
                 <div style="flex:none;width:90px"><div style="font-size:14px;color:#ececee">{{ q.name }}</div><div style="font-size:12px;color:#7c7c84">{{ q.date }}</div></div>
                 <div style="flex:1;min-width:0"><div style="font-size:13px;color:#b0b0b6">{{ q.watch }}</div><div style="font-size:13px;color:#8a8a92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ q.message }}</div></div>
                 <span style="font-size:12px;color:#7c7c84;flex:none">{{ q.status }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- STATS 瀏覽統計 -->
+      <sc-if value="{{ secStats }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="瀏覽統計">
+          <div style="margin-bottom:26px">
+            <h1 style="font-size:26px;font-weight:500;color:#ececee">瀏覽統計</h1>
+            <p style="font-size:14px;color:#7c7c84;margin-top:4px">網站進站人數與各腕錶被點擊次數（每日累計）</p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
+            <sc-for list="{{ statCards2 }}" as="c" hint-placeholder-count="4">
+              <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px 22px">
+                <div style="font-size:12px;letter-spacing:.1em;color:#7c7c84">{{ c.label }}</div>
+                <div style="display:flex;align-items:baseline;gap:6px;margin-top:10px">
+                  <span style="{{ c.numStyle }}">{{ c.value }}</span>
+                  <span style="font-size:13px;color:#7c7c84">{{ c.note }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px 22px;margin-bottom:24px">
+            <h3 style="font-size:15px;font-weight:500;color:#ececee;margin-bottom:16px">近 14 天瀏覽次數</h3>
+            <div style="display:flex;align-items:flex-end;gap:6px;height:140px">
+              <sc-for list="{{ statDaily }}" as="d" hint-placeholder-count="14">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px" title="{{ d.tip }}">
+                  <div style="font-size:11px;color:#7c7c84">{{ d.views }}</div>
+                  <div style="width:100%;display:flex;align-items:flex-end;justify-content:center;flex:1">
+                    <div style="{{ d.barStyle }}"></div>
+                  </div>
+                  <div style="font-size:10px;color:#5e5e66;white-space:nowrap">{{ d.date }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden">
+            <div style="padding:18px 22px;border-bottom:1px solid rgba(255,255,255,.06)">
+              <h3 style="font-size:15px;font-weight:500;color:#ececee">腕錶點擊排行</h3>
+              <p style="font-size:12px;color:#7c7c84;margin-top:3px">客戶在前台點開詳情的累計次數</p>
+            </div>
+            <sc-if value="{{ watchRankEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:34px 22px;text-align:center;color:#7c7c84;font-size:14px">目前還沒有點擊資料。網站有人瀏覽腕錶後，這裡就會出現排行。</div>
+            </sc-if>
+            <sc-for list="{{ watchRank }}" as="r" hint-placeholder-count="0">
+              <div style="padding:14px 22px;border-bottom:1px solid rgba(255,255,255,.05)">
+                <div style="display:flex;align-items:center;gap:14px">
+                  <span style="width:26px;font-family:'Cormorant Garamond',serif;font-size:20px;color:#c8a667;flex:none">{{ r.rank }}</span>
+                  <div style="flex:1;min-width:0;font-size:14px;color:#ececee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div>
+                  <div style="flex:none;font-size:14px;color:#e3c98c">{{ r.count }} 次</div>
+                </div>
+                <div style="{{ r.barStyle }}"></div>
               </div>
             </sc-for>
           </div>
@@ -368,9 +426,9 @@ onAuthStateChanged(auth, user => {
                 </div>
               </div>
             </sc-for>
-            <label style="aspect-ratio:1;border:1.5px dashed rgba(255,255,255,.18);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:#7c7c84;background:#0d0e10">
+            <label id="imgDrop" style="aspect-ratio:1;border:1.5px dashed rgba(255,255,255,.18);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:#7c7c84;background:#0d0e10;text-align:center;padding:6px">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-              <span style="font-size:11px">上傳</span>
+              <span style="font-size:11px;line-height:1.5">點擊或拖曳<br>可一次選多張</span>
               <input type="file" accept="image/*" multiple onChange="{{ addImages }}" style="display:none">
             </label>
           </div>
@@ -459,11 +517,11 @@ class Component extends DCLogic {
     this.state = {
       layoutMode, section: "dashboard",
       watches: [], inquiries: [], copy: this.DEFC,
-      editing: null, editingId: null,
+      editing: null, editingId: null, stats: [],
       search: "", statusFilter: "all", toast: null, loading: true
     };
   }
-  componentDidMount(){ this._load(); }
+  componentDidMount(){ window.__consoleApp = this; this._load(); }
   // Firebase 由 <head> 的 module script 非同步初始化,元件可能先掛載;
   // 等到 window.__db 就緒再讀,避免競態造成載入 0 筆。
   async _waitForFirebase(timeoutMs=10000){
@@ -478,15 +536,17 @@ class Component extends DCLogic {
       await this._waitForFirebase();
       const db = window.__db;
       const { collection, doc, setDoc, getDocs, getDoc } = window.__fs;
-      const [wSnap, iSnap, cSnap] = await Promise.all([
+      const [wSnap, iSnap, cSnap, stSnap] = await Promise.all([
         getDocs(collection(db,'watches')),
         getDocs(collection(db,'inquiries')),
-        getDoc(doc(db,'site','copy'))
+        getDoc(doc(db,'site','copy')),
+        getDocs(collection(db,'stats'))
       ]);
       let watches=[]; wSnap.forEach(d=>watches.push({id:d.id,...d.data()}));
       let inquiries=[]; iSnap.forEach(d=>inquiries.push({id:d.id,...d.data()}));
+      let stats=[]; stSnap.forEach(d=>stats.push({id:d.id,...d.data()}));
       const copy = cSnap.exists() ? cSnap.data() : this.DEFC;
-      this.setState({watches, inquiries, copy, loading:false});
+      this.setState({watches, inquiries, copy, stats, loading:false});
     } catch(e){ console.error(e); this.setState({loading:false}); }
   }
   persist(){ try{ localStorage.setItem(this.KEY, JSON.stringify({layoutMode:this.state.layoutMode})); }catch(e){} }
@@ -505,9 +565,15 @@ class Component extends DCLogic {
   setStatus = (e)=>{ const v=e.currentTarget.dataset.val; this.setState(s=>({editing:{...s.editing,status:v}})); };
 
   addImages = async (e)=>{
-    const files=[...e.target.files]; if(!files.length) return;
-    e.target.value="";
-    this.toastMsg("上傳中…");
+    const files=[...e.target.files]; e.target.value="";
+    await this._uploadFiles(files);
+  };
+  // 共用上傳：給「選檔」與「拖曳」兩個入口用。只接受圖片檔。
+  async _uploadFiles(files){
+    files = [...files].filter(f=>f && f.type && f.type.startsWith('image/'));
+    if(!files.length) return;
+    if(!this.state.editing) return; // 沒開新增/編輯抽屜時忽略
+    this.toastMsg(`上傳中…（${files.length} 張）`);
     try {
       const { ref, uploadBytes, getDownloadURL } = window.__storageFs;
       const urls = await Promise.all(files.map(async f=>{
@@ -517,8 +583,9 @@ class Component extends DCLogic {
         return getDownloadURL(r);
       }));
       this.setState(s=>({editing:{...s.editing,images:[...(s.editing.images||[]),...urls]}}));
+      this.toastMsg(`已加入 ${urls.length} 張`);
     } catch(err){ console.error('upload failed',err); this.toastMsg("上傳失敗"); }
-  };
+  }
   removeImage = (e)=>{ const i=+e.currentTarget.dataset.idx; this.setState(s=>({editing:{...s.editing,images:s.editing.images.filter((_,k)=>k!==i)}})); };
   setCover = (e)=>{ const i=+e.currentTarget.dataset.idx; this.setState(s=>{ const a=[...s.editing.images]; const [m]=a.splice(i,1); a.unshift(m); return {editing:{...s.editing,images:a}}; }); };
 
@@ -630,13 +697,57 @@ class Component extends DCLogic {
   }
   dotFor(s){ return s==="新"?"#c8a667":(s==="處理中"?"#6b9bd1":"#5bbf8a"); }
 
+  // 瀏覽統計：把 stats/{日期} 資料整理成儀表板要的數字與排行
+  computeStats(){
+    const stats=this.state.stats||[];
+    const watches=this.state.watches||[];
+    const nameOf=(id)=>{ const w=watches.find(x=>x.id===id); return w?((w.brand?w.brand+" ":"")+w.name) : ("(已刪除 "+id+")"); };
+    const d=new Date();
+    const today=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    // 最近 14 天的日期序列(含今天)
+    const days=[]; for(let i=13;i>=0;i--){ const t=new Date(d); t.setDate(d.getDate()-i); days.push(t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0")); }
+    const byDate={}; stats.forEach(r=>{ byDate[r.id||r.date]=r; });
+    const viewsOn=(k)=>{ const r=byDate[k]; return (r&&typeof r.views==="number")?r.views:0; };
+    const visOn=(k)=>{ const r=byDate[k]; return (r&&typeof r.visitors==="number")?r.visitors:0; };
+    const todayViews=viewsOn(today), todayVis=visOn(today);
+    const last7=days.slice(-7);
+    const wk=last7.reduce((a,k)=>a+viewsOn(k),0);
+    const totalViews=stats.reduce((a,r)=>a+((typeof r.views==="number")?r.views:0),0);
+    const totalVis=stats.reduce((a,r)=>a+((typeof r.visitors==="number")?r.visitors:0),0);
+    const bigNum="font-family:'Cormorant Garamond',serif;font-size:34px;line-height:1";
+    const statCards2=[
+      {label:"今日瀏覽",value:todayViews,note:"次",numStyle:bigNum+";color:#e3c98c"},
+      {label:"今日訪客",value:todayVis,note:"人",numStyle:bigNum+";color:#5bbf8a"},
+      {label:"近 7 日瀏覽",value:wk,note:"次",numStyle:bigNum+";color:#ececee"},
+      {label:"累計瀏覽",value:totalViews,note:"次・"+totalVis+" 人",numStyle:bigNum+";color:#ececee"}
+    ];
+    // 每日長條(以 14 天內最大瀏覽數為基準)
+    const maxV=Math.max(1,...days.map(viewsOn));
+    const statDaily=days.map(k=>{
+      const v=viewsOn(k), vis=visOn(k);
+      return { date:k.slice(5), views:v, visitors:vis, tip:k+"：瀏覽 "+v+" 次／訪客 "+vis+" 人",
+        barStyle:{width:"62%",height:v>0?Math.max(4,Math.round(v/maxV*100))+"%":"2px",borderRadius:"4px 4px 0 0",background:k===today?"#c8a667":"rgba(200,166,103,.42)"} };
+    });
+    // 各錶點擊排行(跨所有日期加總)
+    const clickTotals={};
+    stats.forEach(r=>{ const c=r.clicks||{}; Object.keys(c).forEach(id=>{ const n=c[id]; if(typeof n==="number") clickTotals[id]=(clickTotals[id]||0)+n; }); });
+    const ranked=Object.keys(clickTotals).map(id=>({id,count:clickTotals[id]})).sort((a,b)=>b.count-a.count);
+    const maxC=Math.max(1,...ranked.map(r=>r.count));
+    const watchRank=ranked.slice(0,15).map((r,i)=>({
+      rank:i+1, name:nameOf(r.id), count:r.count,
+      barStyle:{width:Math.round(r.count/maxC*100)+"%",height:"7px",borderRadius:"4px",background:"#c8a667",marginTop:"6px"}
+    }));
+    return { statCards2, statDaily, watchRank, watchRankEmpty:watchRank.length===0,
+             statHasData:stats.length>0, statDays:days.length };
+  }
+
   renderVals(){
     const s=this.state;
     const NAV_ON="display:flex;align-items:center;gap:12px;width:100%;padding:11px 13px;border:0;border-radius:8px;background:rgba(200,166,103,.14);color:#e3c98c;font-size:14px;cursor:pointer;text-align:left;font-weight:500";
     const NAV_OFF="display:flex;align-items:center;gap:12px;width:100%;padding:11px 13px;border:0;border-radius:8px;background:transparent;color:#b0b0b6;font-size:14px;cursor:pointer;text-align:left;font-weight:400";
     const TAB_ON="display:flex;align-items:center;gap:8px;padding:0 16px;border:0;border-bottom:2px solid #c8a667;background:transparent;color:#e3c98c;font-size:14px;cursor:pointer;font-weight:500";
     const TAB_OFF="display:flex;align-items:center;gap:8px;padding:0 16px;border:0;border-bottom:2px solid transparent;background:transparent;color:#b0b0b6;font-size:14px;cursor:pointer;font-weight:400";
-    const items=[["dashboard","儀表板","layout-dashboard"],["watches","腕錶管理","watch"],["inquiries","詢問訊息","messages-square"],["copy","網站文案","file-text"],["preview","前台預覽","eye"]];
+    const items=[["dashboard","儀表板","layout-dashboard"],["watches","腕錶管理","watch"],["inquiries","詢問訊息","messages-square"],["copy","網站文案","file-text"],["preview","前台預覽","eye"],["stats","瀏覽統計","bar-chart-3"]];
     const navItems=items.map(([key,label,icon])=>({key,label,icon,style:s.section===key?NAV_ON:NAV_OFF,tabStyle:s.section===key?TAB_ON:TAB_OFF}));
 
     const SW_ON="padding:5px 12px;border:0;border-radius:6px;background:#c8a667;color:#15151a;font-size:12px;cursor:pointer;font-weight:600";
@@ -678,14 +789,17 @@ class Component extends DCLogic {
     const segBtn=(on,kind)=>{ const c=kind==="pub"?"#5bbf8a":"#8a8a92"; const bg=kind==="pub"?"rgba(91,191,138,.14)":"rgba(255,255,255,.06)"; return "padding:8px 18px;border-radius:7px;font-size:13px;cursor:pointer;border:1px solid "+(on?(kind==="pub"?"rgba(91,191,138,.4)":"rgba(255,255,255,.2)"):"transparent")+";background:"+(on?bg:"transparent")+";color:"+(on?c:"#6f6a60"); };
     const edImages=(ed.images||[]).map((url,i)=>({bg:{position:"absolute",inset:0,backgroundImage:'url("'+url+'")',backgroundSize:"cover",backgroundPosition:"center"},cover:i===0,idx:i}));
 
+    const statsVals=this.computeStats();
+
     return {
       isSidebar:s.layoutMode==="sidebar", isTopnav:s.layoutMode==="topnav",
       navItems,
-      navDash:navItems[0], navWatch:navItems[1], navInq:navItems[2], navCopy:navItems[3], navPrev:navItems[4],
+      navDash:navItems[0], navWatch:navItems[1], navInq:navItems[2], navCopy:navItems[3], navPrev:navItems[4], navStats:navItems[5],
       swSideStyle:s.layoutMode==="sidebar"?SW_ON:SW_OFF, swTopStyle:s.layoutMode==="topnav"?SW_ON:SW_OFF,
       mainStyle:s.layoutMode==="sidebar"?{marginLeft:"240px"}:{marginTop:"60px"},
       go:this.go, setLayout:this.setLayout, openNew:this.openNew, openEdit:this.openEdit, closeEdit:this.closeEdit,
-      secDash:s.section==="dashboard", secWatch:s.section==="watches", secInq:s.section==="inquiries", secCopy:s.section==="copy", secPreview:s.section==="preview",
+      secDash:s.section==="dashboard", secWatch:s.section==="watches", secInq:s.section==="inquiries", secCopy:s.section==="copy", secPreview:s.section==="preview", secStats:s.section==="stats",
+      ...statsVals,
       statCards, recentInq, inqList, inqEmpty:inqList.length===0,
       watchList:list, watchCount:s.watches.length, watchEmpty:list.length===0,
       search:s.search, setSearch:this.setSearch, statusChips, setStatusFilter:this.setStatusFilter,
@@ -770,6 +884,62 @@ class Component extends DCLogic {
   <option value="Enicar">
   <option value="Serica">
   <option value="Ming">
+  <option value="Certina 雪鐵納">
+  <option value="Mido 美度">
+  <option value="Titoni 梅花">
+  <option value="Cyma 西馬">
+  <option value="Edox 依度">
+  <option value="Roamer 羅馬">
+  <option value="Eterna 綺年華">
+  <option value="Doxa 時度">
+  <option value="Universal Genève 浪琴宇宙">
+  <option value="Movado 摩凡陀">
+  <option value="Baume & Mercier 名士">
+  <option value="Maurice Lacroix 艾美">
+  <option value="Alpina">
+  <option value="Frederique Constant 康斯登">
+  <option value="Chronoswiss 瑞寶">
+  <option value="Carl F. Bucherer 寶齊萊">
+  <option value="Bulova 寶路華">
+  <option value="Hamilton 漢米頓">
+  <option value="Tissot 天梭">
+  <option value="Victorinox 維氏">
+  <option value="Sinn">
+  <option value="Damasko">
+  <option value="Fortis 福爾蒂斯">
+  <option value="Junghans 榮漢斯">
+  <option value="Stowa">
+  <option value="Laco">
+  <option value="Glycine 冠星">
+  <option value="Squale 鯊魚">
+  <option value="Orient 東方雙獅">
+  <option value="Seiko 5">
+  <option value="Vulcain 窩路堅">
+  <option value="Favre-Leuba 域陀">
+  <option value="Cornavin">
+  <option value="Timex 天美時">
+  <option value="Citizen 星辰">
+  <option value="Aviator 飛行家">
+  <option value="Junkers">
+  <option value="Zeppelin">
+  <option value="Atlantic 雅典娜">
 </datalist>
+<script>
+  // 拖曳上傳：抽屜內的上傳框(#imgDrop)由 DCLogic 動態重繪,故用文件層級委派。
+  (function(){
+    let dragDepth = 0;
+    const hi = (on)=>{ const el=document.getElementById('imgDrop'); if(el) el.style.borderColor = on?'#c8a667':'rgba(255,255,255,.18)'; };
+    const inDrop = (e)=>{ const el=document.getElementById('imgDrop'); return el && (e.target===el || el.contains(e.target)); };
+    document.addEventListener('dragenter', (e)=>{ if(!inDrop(e)) return; e.preventDefault(); dragDepth++; hi(true); });
+    document.addEventListener('dragover',  (e)=>{ if(!inDrop(e)) return; e.preventDefault(); e.dataTransfer.dropEffect='copy'; });
+    document.addEventListener('dragleave', (e)=>{ if(!inDrop(e)) return; dragDepth=Math.max(0,dragDepth-1); if(!dragDepth) hi(false); });
+    document.addEventListener('drop', (e)=>{
+      if(!inDrop(e)) return;
+      e.preventDefault(); dragDepth=0; hi(false);
+      const files = e.dataTransfer && e.dataTransfer.files;
+      if(files && files.length && window.__consoleApp) window.__consoleApp._uploadFiles(files);
+    });
+  })();
+</script>
 </body>
 </html>
