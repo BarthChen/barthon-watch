@@ -1,0 +1,20 @@
+name: Deploy Functions
+# 先設成「手動觸發」:等 Blaze + LINE 金鑰(Secret)+ IAM 權限都設好後,
+# 到 GitHub → Actions → Deploy Functions → Run workflow 觸發,即可部署。
+# 之後一切就緒、要改成 push 自動部署,把下面的 push 段落取消註解即可。
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  #   paths: ['functions/**', 'firebase.json']
+jobs:
+  functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: w9jds/firebase-action@v13.20.1
+        with:
+          args: deploy --only functions
+        env:
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          PROJECT_ID: barthon-watch

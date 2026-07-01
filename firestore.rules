@@ -47,5 +47,11 @@ service cloud.firestore {
                     && request.resource.data.status == '新';
       allow read, update, delete: if isAdmin();
     }
+
+    // 系統設定(如 config/line 的 LINE 接收者名單):
+    // 只有雲端函式(Admin SDK,會略過規則)能存取;前端一律禁止讀寫。
+    match /config/{doc} {
+      allow read, write: if false;
+    }
   }
 }
