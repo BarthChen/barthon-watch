@@ -204,9 +204,9 @@
     background:rgba(8,8,10,.78);border:1px solid var(--gold-dim);
     font-size:11px;letter-spacing:.1em;color:var(--gold-bright);padding:5px 11px;
   }
-  /* 其餘標籤移到照片下方文字區 */
-  .card-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-  .card-tag{font-size:10.5px;letter-spacing:.06em;color:var(--gold-bright);border:1px solid var(--gold-dim);padding:3px 8px;line-height:1.4}
+  /* 其餘標籤移到照片下方文字區:柔和次要質感,不搶價格與主標籤 */
+  .card-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+  .card-tag{font-size:11px;letter-spacing:.04em;color:#b09867;border:1px solid rgba(200,166,103,.3);background:rgba(200,166,103,.05);padding:3px 9px;border-radius:3px;line-height:1.55}
   /* 已售出：灰底遮罩 + 浮水印印章 */
   .sold-mask{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:rgba(10,10,12,.55);backdrop-filter:grayscale(1) brightness(.75)}
   .sold-stamp{transform:rotate(-12deg);border:3px solid rgba(255,255,255,.85);color:rgba(255,255,255,.92);font-family:var(--serif-tc);font-weight:600;font-size:26px;letter-spacing:.18em;padding:8px 22px;border-radius:6px;text-shadow:0 2px 8px rgba(0,0,0,.5);box-shadow:0 2px 14px rgba(0,0,0,.45)}
