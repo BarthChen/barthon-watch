@@ -198,8 +198,8 @@
   .photo{position:relative;background:var(--panel-2);overflow:hidden;display:block}
   .photo img{width:100%;height:100%;object-fit:cover;display:block}
   .photo.empty::after{content:attr(data-ph);position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:0 14px;color:var(--muted-2);font-size:11.5px;letter-spacing:.1em;font-weight:300;line-height:1.6}
+  .card-badges{position:absolute;top:12px;left:12px;z-index:3;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 24px)}
   .card-badge{
-    position:absolute;top:12px;left:12px;z-index:3;
     background:rgba(8,8,10,.78);border:1px solid var(--gold-dim);
     font-size:11px;letter-spacing:.1em;color:var(--gold-bright);padding:5px 11px;
   }
@@ -209,6 +209,10 @@
   .card.is-sold .card-media .photo img{filter:grayscale(.9)}
   .card.is-sold .card-price{color:var(--muted)}
   .d-media .sold-mask .sold-stamp{font-size:40px;padding:12px 34px}
+  /* 已收訂：金色浮水印(不轉灰,仍可看清實拍) */
+  .reserved-mask{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:rgba(10,10,12,.30)}
+  .reserved-stamp{transform:rotate(-12deg);border:3px solid rgba(200,166,103,.9);color:rgba(230,205,150,.96);font-family:var(--serif-tc);font-weight:600;font-size:26px;letter-spacing:.18em;padding:8px 22px;border-radius:6px;text-shadow:0 2px 8px rgba(0,0,0,.5);box-shadow:0 2px 14px rgba(0,0,0,.45)}
+  .d-media .reserved-mask .reserved-stamp{font-size:40px;padding:12px 34px}
   .card-body{padding:20px 22px 24px;display:flex;flex-direction:column;flex:1}
   .card-brand{font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
   .card-name{font-family:var(--serif-tc);font-weight:500;font-size:19px;color:var(--ink);line-height:1.35;margin-bottom:8px}
@@ -332,6 +336,13 @@
   .specs dt{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .specs dd{font-size:14.5px;color:var(--ink);font-weight:400}
   .d-cta{margin-top:auto;display:flex;gap:12px;flex-wrap:wrap}
+  /* 快速分享 FB / LINE / IG / 複製連結 */
+  .d-share{display:flex;align-items:center;gap:9px;margin-top:16px;flex-wrap:wrap}
+  .d-share-label{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+  .share-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border:1px solid var(--gold-dim);border-radius:999px;background:transparent;color:var(--gold-bright);font-size:12.5px;letter-spacing:.05em;cursor:pointer;text-decoration:none;transition:background .2s,border-color .2s}
+  .share-btn:hover{background:rgba(200,166,103,.12);border-color:var(--gold-bright)}
+  .share-btn svg{width:15px;height:15px}
+  #fxToast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--ink);color:#15151a;padding:11px 22px;border-radius:10px;font-size:14px;font-weight:500;z-index:120;box-shadow:0 16px 40px -12px rgba(0,0,0,.6);opacity:0;transition:opacity .25s;pointer-events:none}
 
   @media (max-width:760px){
     .detail-inner{grid-template-columns:1fr}
@@ -654,12 +665,14 @@
           const set=w.set||{};
           const cond=w.condition==="全新"?"全新":((set.box&&set.card)?((w.pct||"")+"・全套"):(w.pct||""));
           const meta=[w.year,cond].filter(Boolean).join("・")||"現貨";
-          WATCHES.push({id:w.id,brand:w.brand,name:w.name,cat:w.cat,badge:w.badge||"",price:w.price,meta,ref:w.ref,year:w.year,movement:w.movement,size:w.size,material:w.material,water:w.water,accessories:w.accessories,desc:w.desc,imgs:w.images||[],sold:!!w.sold,soldAt:w.soldAt||0});
+          const saleState = w.saleState || (w.sold?"sold":"sale");
+          WATCHES.push({id:w.id,brand:w.brand,name:w.name,cat:w.cat,badge:w.badge||"",badges:Array.isArray(w.badges)?w.badges:[],price:w.price,meta,ref:w.ref,year:w.year,movement:w.movement,size:w.size,material:w.material,water:w.water,accessories:w.accessories,desc:w.desc,imgs:w.images||[],saleState,sold:saleState==="sold",soldAt:w.soldAt||0});
         });
       }
       if(cSnap.exists()) _applyCopy(cSnap.data());
       BRANDS.length=0; BRANDS.push("全部",...Array.from(new Set(WATCHES.map(w=>w.brand))));
       renderFilters(); renderGrid();
+      openFromHash(); // 分享連結(#w<id>)載入後自動開啟該支腕錶
       // ---- 瀏覽統計:記錄到 stats/{今天} ----
       try {
         const todayKey = ()=>{ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
@@ -722,7 +735,7 @@
   const CATS = ["全部","運動","正裝","古董","潮流"];
   const BRANDS = ["全部", ...Array.from(new Set(WATCHES.map(w=>w.brand)))];
   const CONDS = ["全部","全新","二手"];          // 成色
-  const AVAILS = ["全部","在售","已售出"];        // 供貨狀態
+  const AVAILS = ["全部","在售","已收訂","已售出"]; // 供貨狀態
   const SORTS = ["預設","價格低→高","價格高→低"]; // 排序
 
   // Build a real <img> with graceful placeholder fallback (deploy-friendly).
@@ -784,18 +797,19 @@
         (activeBrand==="全部"||w.brand===activeBrand)
       &&(activeCat==="全部"||w.cat===activeCat)
       &&(activeCond==="全部"||w.condition===activeCond)
-      &&(activeAvail==="全部"||(activeAvail==="在售"?!w.sold:!!w.sold))
+      &&(activeAvail==="全部"||(activeAvail==="在售"?w.saleState==="sale":activeAvail==="已收訂"?w.saleState==="reserved":w.saleState==="sold"))
     ).sort((a,b)=>{
-      // 已售出永遠排到最後
-      const as=a.sold?1:0, bs=b.sold?1:0; if(as!==bs) return as-bs;
+      // 排序權重:在售(0) → 已收訂(1) → 已售出(2),非在售者永遠排到最後
+      const rank=w=>w.saleState==="sold"?2:w.saleState==="reserved"?1:0;
+      const as=rank(a), bs=rank(b); if(as!==bs) return as-bs;
       // 價格排序(無數字價格如「詢問」排到該區最後)
       if(activeSort!=="預設"){
         const pa=priceNum(a), pb=priceNum(b);
         if(pa==null&&pb==null){} else if(pa==null) return 1; else if(pb==null) return -1;
         else return activeSort==="價格低→高" ? pa-pb : pb-pa;
       }
-      // 預設:已售出區依售出先後,在售區維持原順序
-      if(as&&bs) return (a.soldAt||0)-(b.soldAt||0);
+      // 預設:已收訂/已售出區依狀態變更先後,在售區維持原順序
+      if(as>0&&bs>0) return (a.soldAt||0)-(b.soldAt||0);
       return 0;
     });
     if(resultCount) resultCount.textContent = "共 " + list.length + " 支";
@@ -807,12 +821,13 @@
       const card = document.createElement("article");
       card.className = "card";
       card.style.transitionDelay = (i%4*60)+"ms";
-      if(w.sold) card.classList.add("is-sold");
+      if(w.saleState==="sold") card.classList.add("is-sold");
+      const cardBadges=[...(w.badges||[]),...(w.badge?[w.badge]:[])];
       card.innerHTML = `
         <div class="card-media">
-          ${w.badge?`<span class="card-badge">${w.badge}</span>`:""}
+          ${cardBadges.length?`<span class="card-badges">${cardBadges.map(b=>`<span class="card-badge">${b}</span>`).join("")}</span>`:""}
           ${photoURL(w.imgs&&w.imgs[0], "", `${w.brand} 照片`)}
-          ${w.sold?`<div class="sold-mask"><span class="sold-stamp">已售出</span></div>`:""}
+          ${w.saleState==="sold"?`<div class="sold-mask"><span class="sold-stamp">已售出</span></div>`:w.saleState==="reserved"?`<div class="reserved-mask"><span class="reserved-stamp">已收訂</span></div>`:""}
         </div>
         <div class="card-body">
           <div class="card-brand">${w.brand}</div>
@@ -839,6 +854,10 @@
     const w = WATCHES.find(x=>x.id===id);
     if(!w) return;
     if(window.__track) window.__track('click', id); // 記錄這支錶被點擊
+    history.replaceState(null, "", "#w"+id); // 供分享:網址帶上這支錶的深連結
+    const shareUrl = location.origin + location.pathname + "#w" + id;
+    const shareText = `${w.brand} ${w.name}｜BarthON 精選腕錶`;
+    const detailBadges=[...(w.badges||[]),...(w.badge?[w.badge]:[])];
     const specs = [
       ["型號 Ref.", w.ref],["年份 Year", w.year],["機芯 Movement", w.movement],
       ["錶徑 Size", w.size],["材質 Case", w.material],["防水 W.R.", w.water],
@@ -856,8 +875,9 @@
         <h3>${w.name}</h3>
         <div class="d-price">${fmtPrice(w.price)}</div>
         <div class="d-badges">
-          ${w.sold?`<span class="d-badge" style="border-color:rgba(224,102,77,.5);color:#e0664d">已售出</span>`:""}
-          ${w.badge?`<span class="d-badge">${w.badge}</span>`:""}
+          ${w.saleState==="sold"?`<span class="d-badge" style="border-color:rgba(224,102,77,.5);color:#e0664d">已售出</span>`:""}
+          ${w.saleState==="reserved"?`<span class="d-badge" style="border-color:rgba(200,166,103,.6);color:#e3c98c">已收訂</span>`:""}
+          ${detailBadges.map(b=>`<span class="d-badge">${b}</span>`).join("")}
           <span class="d-badge">正品保證</span><span class="d-badge">現貨實拍</span><span class="d-badge">可面交驗錶</span>
         </div>
         <p class="d-desc">${w.desc}</p>
@@ -868,15 +888,33 @@
           <a class="btn btn-gold" href="#contact" data-close data-inquire><i data-lucide="message-square"></i>私訊詢問此錶</a>
           <a class="btn btn-ghost" href="#contact" data-close><i data-lucide="phone"></i>來電洽詢</a>
         </div>
+        <div class="d-share">
+          <span class="d-share-label">分享</span>
+          <a class="share-btn" data-share="fb" href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}" target="_blank" rel="noopener" title="分享到 Facebook"><i data-lucide="facebook"></i>FB</a>
+          <a class="share-btn" data-share="line" href="https://social-plugin.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener" title="分享到 LINE"><i data-lucide="message-circle"></i>LINE</a>
+          <button class="share-btn" data-share="ig" type="button" title="複製連結,貼到 IG 貼文/限動"><i data-lucide="instagram"></i>IG</button>
+          <button class="share-btn" data-share="copy" type="button" title="複製連結"><i data-lucide="link"></i>複製連結</button>
+        </div>
       </div>`;
     detail.classList.add("open");
     detail.setAttribute("aria-hidden","false");
     document.body.style.overflow = "hidden";
-    // 已售出:主圖蓋上灰底「已售出」浮水印
-    if(w.sold){
+    // 已售出/已收訂:主圖蓋上對應浮水印
+    if(w.saleState==="sold" || w.saleState==="reserved"){
       const main = detailInner.querySelector(".d-media .g-main");
-      if(main){ const m=document.createElement("div"); m.className="sold-mask"; m.innerHTML='<span class="sold-stamp">已售出</span>'; main.appendChild(m); }
+      if(main){ const m=document.createElement("div"); const isSold=w.saleState==="sold"; m.className=isSold?"sold-mask":"reserved-mask"; m.innerHTML=`<span class="${isSold?"sold-stamp":"reserved-stamp"}">${isSold?"已售出":"已收訂"}</span>`; main.appendChild(m); }
     }
+    // 快速分享:FB / LINE 直接開分享視窗(用 <a>);IG 無網頁分享 API,改複製連結。
+    detailInner.querySelectorAll("[data-share]").forEach(btn=>{
+      const kind = btn.dataset.share;
+      if(kind==="fb" || kind==="line") return; // 交給 <a> 導轉
+      btn.addEventListener("click", async ()=>{
+        const text = shareText + " " + shareUrl;
+        try { await navigator.clipboard.writeText(text); }
+        catch(e){ const ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(_){} ta.remove(); }
+        fxToast(kind==="ig" ? "已複製連結,貼到 IG 貼文或限動即可分享" : "已複製分享連結");
+      });
+    });
     // 點圖放大:燈箱以這支錶的所有實拍圖為相簿
     const gallery = (w.imgs||[]).filter(Boolean);
     detailInner.querySelectorAll(".d-media .photo img").forEach((img)=>{
@@ -894,6 +932,19 @@
     detail.classList.remove("open");
     detail.setAttribute("aria-hidden","true");
     document.body.style.overflow = "";
+    if((location.hash||"").indexOf("#w")===0) history.replaceState(null, "", location.pathname + location.search); // 清掉分享深連結
+  }
+  // 分享連結載入時,自動開啟對應腕錶(需 WATCHES 已載入)
+  function openFromHash(){
+    const m = (location.hash||"").match(/^#w(.+)$/);
+    if(m && WATCHES.find(x=>x.id===m[1])) openDetail(m[1]);
+  }
+  // 輕量 toast:分享複製連結後給回饋
+  function fxToast(msg){
+    let t = document.getElementById("fxToast");
+    if(!t){ t=document.createElement("div"); t.id="fxToast"; document.body.appendChild(t); }
+    t.textContent = msg; t.style.opacity="1";
+    clearTimeout(fxToast._t); fxToast._t = setTimeout(()=>{ t.style.opacity="0"; }, 2200);
   }
   document.getElementById("detailScrim").addEventListener("click", closeDetail);
   document.getElementById("detailClose").addEventListener("click", closeDetail);
