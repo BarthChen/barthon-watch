@@ -506,6 +506,7 @@ onAuthStateChanged(auth, user => {
       </div>
       <div style="position:sticky;bottom:0;background:#121316;border-top:1px solid rgba(255,255,255,.08);padding:16px 24px;display:flex;gap:12px">
         <button onClick="{{ closeEdit }}" style="flex:none;padding:12px 22px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:transparent;color:#b0b0b6;font-size:14px;cursor:pointer">取消</button>
+        <button onClick="{{ copyFbPost }}" title="把這支錶排成一段文案複製,直接貼到 FB 粉專" style="flex:none;padding:12px 18px;border:1px solid rgba(200,166,103,.5);border-radius:8px;background:rgba(200,166,103,.1);color:#e3c98c;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 22v-7h2.4l.4-3h-2.8V10c0-.9.3-1.5 1.5-1.5H16.7V5.9c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.2H8v3h2.5v7h3z"/></svg>複製 FB 貼文</button>
         <button onClick="{{ save }}" style="flex:1;padding:12px;border:0;border-radius:8px;background:#c8a667;color:#15151a;font-size:14px;font-weight:600;cursor:pointer">儲存</button>
       </div>
     </aside>
@@ -739,6 +740,37 @@ class Component extends DCLogic {
   }
   dotFor(s){ return s==="新"?"#c8a667":(s==="處理中"?"#6b9bd1":"#5bbf8a"); }
 
+  // 產生 FB 貼文文案:把腕錶資料排成一段可直接貼到粉專的文字。只列有填的欄位。
+  fbCaption(w){
+    const L=[];
+    const title=[w.brand,w.name].filter(Boolean).join(" ").trim();
+    L.push("【"+(title||"腕錶")+"】");
+    const tags=[...((w.badges)||[]),...(w.badge?[w.badge]:[])];
+    if(tags.length) L.push("🔖 "+tags.join("・"));
+    L.push("");
+    if(w.price) L.push("💰 價格："+w.price);
+    L.push("✨ 錶況："+this.condText(w));
+    const spec=[["📅 年份",w.year],["⚙️ 機芯",w.movement],["📏 錶徑",w.size],["🧭 材質",w.material],["💧 防水",w.water],["🔖 型號 Ref.",w.ref],["📦 配件",w.accessories]];
+    spec.forEach(([k,v])=>{ if(v&&String(v).trim()) L.push(k+"："+v); });
+    if(w.desc&&w.desc.trim()){ L.push(""); L.push(w.desc.trim()); }
+    L.push("");
+    L.push("✅ 正品保證・現貨實拍・台灣本島可面交驗錶");
+    L.push("📩 有興趣請私訊，或來電洽詢");
+    const hash=["#BarthON","#進口腕錶",(w.condition==="全新"?"#全新錶":"#二手錶"),"#腕錶收藏"];
+    if(w.brand) hash.push("#"+String(w.brand).replace(/\s+/g,""));
+    if(w.cat) hash.push("#"+w.cat);
+    L.push(""); L.push(hash.join(" "));
+    return L.join("\n");
+  }
+  // 一鍵複製目前編輯中腕錶的 FB 貼文文案到剪貼簿
+  copyFbPost = async ()=>{
+    const w=this.state.editing; if(!w){ this.toastMsg("請先開啟一支腕錶"); return; }
+    const text=this.fbCaption(w);
+    try { await navigator.clipboard.writeText(text); }
+    catch(e){ const ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(_){}; ta.remove(); }
+    this.toastMsg("已複製 FB 貼文文案，貼到粉專即可");
+  };
+
   // 瀏覽統計：把 stats/{日期} 資料整理成儀表板要的數字與排行
   computeStats(){
     const stats=this.state.stats||[];
@@ -868,7 +900,7 @@ class Component extends DCLogic {
       hasEditing:!!s.editing, drawerTitle:s.editingId?"編輯腕錶":"新增腕錶",
       ed, edImages, edSet:ed.set||{}, edIsUsed:isUsed,
       onField:this.onField, onSet:this.onSet, setCond:this.setCond, setStatus:this.setStatus, setSale:this.setSale, toggleTag:this.toggleTag,
-      addImages:this.addImages, removeImage:this.removeImage, setCover:this.setCover, save:this.save,
+      addImages:this.addImages, removeImage:this.removeImage, setCover:this.setCover, save:this.save, copyFbPost:this.copyFbPost,
       condNewStyle:condBtn(ed.condition==="全新"), condUsedStyle:condBtn(isUsed),
       pubOnStyle:segBtn(ed.status==="published","pub"), pubOffStyle:segBtn(ed.status==="draft","draft"),
       saleSaleStyle:saleBtn(this.saleStateOf(ed)==="sale","on"), saleReservedStyle:saleBtn(this.saleStateOf(ed)==="reserved","reserved"), saleSoldStyle:saleBtn(this.saleStateOf(ed)==="sold","sold"),
