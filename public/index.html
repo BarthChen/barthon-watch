@@ -691,7 +691,14 @@
       const k=a.getAttribute("data-link");
       if(map[k]) a.setAttribute("href",map[k]);
       if(k==="phone"&&c.phone) a.setAttribute("href","tel:"+c.phone.replace(/[^0-9+]/g,""));
-      if(k==="line"&&c.lineId) a.setAttribute("href","https://line.me/R/ti/p/@"+c.lineId.replace(/^@/,""));
+      if(k==="line"&&c.lineId){
+        // 三種格式都支援:lin.ee/完整網址直接用;@開頭=官方帳號 ID;其餘視為個人 ID(~ 格式)
+        const v=String(c.lineId).trim();
+        const url = /^https?:\/\//i.test(v) ? v
+          : v.charAt(0)==="@" ? "https://line.me/R/ti/p/"+encodeURIComponent(v)
+          : "https://line.me/R/ti/p/~"+encodeURIComponent(v);
+        a.setAttribute("href",url);
+      }
     });
   }catch(e){} }
   (async function initFirebase(){
