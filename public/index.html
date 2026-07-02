@@ -538,7 +538,8 @@
 </section>
 
 <section class="about" id="about">
-  <div class="wrap sec" style="padding-top:96px;padding-bottom:96px">
+  <!-- 不可同時掛 wrap+sec:.sec 的 padding:104px 0 會把 .wrap 的左右內距歸零,文字貼邊 -->
+  <div class="wrap" style="padding-top:96px;padding-bottom:96px">
     <div class="about-grid">
       <div class="about-figure reveal">
         <div class="photo empty" data-ph="個人收藏照"></div>
@@ -673,7 +674,17 @@
     if(c.heroImg){ const el=document.querySelector(".hero-figure .photo"); if(el){ el.innerHTML='<img src="'+c.heroImg+'" alt="" style="width:100%;height:auto;display:block;">'; el.style.height='auto'; el.classList.remove('empty'); } }
     if(c.heroLead){ const el=document.querySelector(".hero p.lead"); if(el) el.textContent=c.heroLead; }
     if(c.heroTitle){ const h=document.querySelector(".hero h1"); if(h){ const en=h.querySelector(".en"); h.innerHTML=c.heroTitle.split(/\s+/).join("<br>")+(en?en.outerHTML:""); } }
-    if(c.aboutText){ const ap=document.querySelector("#about .about-grid p"); if(ap) ap.textContent=c.aboutText; }
+    if(c.aboutText){
+      // 後台文案是唯一來源:填入第一段、移除其餘寫死的段落(否則內容會重複);換行可分段
+      const ps=[...document.querySelectorAll("#about .about-grid p")];
+      if(ps.length){
+        const paras=c.aboutText.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+        ps[0].textContent=paras[0]||c.aboutText;
+        ps.slice(1).forEach(p=>p.remove());
+        let anchor=ps[0];
+        paras.slice(1).forEach(t=>{ const p=document.createElement("p"); p.textContent=t; anchor.after(p); anchor=p; });
+      }
+    }
     if(c.aboutImg){ const el=document.querySelector(".about-figure .photo"); if(el){ el.style.backgroundImage='url("'+c.aboutImg+'")'; el.style.backgroundSize='cover'; el.style.backgroundPosition='center'; el.classList.remove('empty'); } }
     const map={"fb-marketplace":c.fbUrl,"messenger":c.fbUrl,"instagram":c.igUrl};
     document.querySelectorAll("[data-link]").forEach(a=>{
