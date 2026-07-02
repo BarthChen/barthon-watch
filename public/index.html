@@ -393,6 +393,7 @@
   }
   @media (max-width:560px){
     .wrap{padding:0 20px}
+    .topbar{font-size:11px;letter-spacing:.06em;padding:8px 12px}
     .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
     .filterbar{gap:16px}
     .filter-controls{gap:10px 12px}
@@ -407,6 +408,30 @@
     .steps{grid-template-columns:1fr}
     .contact-methods .cm{width:128px}
     .sec{padding:72px 0}
+    /* 卡片:手機上寬度只剩 ~160px,價格與按鈕改上下疊放,價格永遠看得見 */
+    .card-body{padding:14px 13px 16px}
+    .card-name{font-size:16px}
+    .card-meta{font-size:12px;margin-bottom:14px}
+    .card-tags{gap:5px;margin-top:9px;margin-bottom:11px}
+    .card-foot{flex-direction:column;align-items:stretch;gap:10px;padding-top:12px}
+    .card-price{font-size:17px;white-space:normal;overflow:visible;text-overflow:clip}
+    .card-ask{justify-content:center;padding:9px 10px;font-size:12.5px}
+    /* 卡片浮水印縮小,不要蓋滿整張小圖 */
+    .sold-stamp,.reserved-stamp{font-size:16px;border-width:2px;padding:5px 13px;letter-spacing:.12em}
+    /* 詳情彈窗:吃滿更多螢幕,按鈕改滿版好點按 */
+    .detail-panel{width:calc(100vw - 20px);max-height:calc(100vh - 24px)}
+    .d-media .g-main{height:240px}
+    .g-thumbs .photo{height:62px}
+    .d-media .sold-mask .sold-stamp,.d-media .reserved-mask .reserved-stamp{font-size:28px;padding:9px 24px}
+    .d-info{padding:26px 18px 30px}
+    .d-info h3{font-size:23px}
+    .d-price{font-size:26px}
+    .specs .row:nth-child(odd){padding-right:12px}
+    .d-cta{gap:10px}
+    .d-cta .btn{flex:1 1 100%;justify-content:center;padding:13px 14px}
+    /* 首頁主按鈕改滿版直排 */
+    .hero-cta{gap:12px}
+    .hero-cta .btn{flex:1 1 100%;justify-content:center}
   }
   /* mobile menu */
   .mmenu{position:fixed;inset:0;z-index:60;background:rgba(8,8,10,.97);backdrop-filter:blur(8px);display:none;flex-direction:column;align-items:center;justify-content:center;gap:30px}
