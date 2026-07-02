@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <title>BarthON 後台管理</title>
 
@@ -26,9 +27,15 @@ window.__storage = storage;
 window.__fs = { collection, doc, setDoc, updateDoc, deleteDoc, getDocs, getDoc };
 window.__storageFs = { ref, uploadBytes, getDownloadURL, deleteObject };
 
+// 只有這個帳號能用後台;其他帳號即使登入成功也直接踢出。
+// (Firestore 規則本來就擋非管理員讀寫,這裡是縱深防禦,避免陌生帳號看到半壞的介面)
+const ADMIN_EMAIL = "fg3797@gmail.com";
+
 onAuthStateChanged(auth, user => {
   if (!user) {
     window.location.replace("/admin");
+  } else if (user.email !== ADMIN_EMAIL) {
+    signOut(auth).then(() => window.location.replace("/admin"));
   } else {
     // Show console, hide gate
     document.getElementById("auth-gate").style.display  = "none";
@@ -577,11 +584,16 @@ class Component extends DCLogic {
   // 排序:在售在前(維持原順序),已收訂次之,已售出最後;非在售者依狀態變更時間先後往後排。
   sortBySold(arr){ const rank=w=>{ const st=this.saleStateOf(w); return st==="sold"?2:st==="reserved"?1:0; }; return arr.slice().sort((a,b)=>{ const ar=rank(a), br=rank(b); if(ar!==br) return ar-br; if(ar>0&&br>0) return (a.soldAt||0)-(b.soldAt||0); return 0; }); }
 
+  // 本次編輯期間新上傳到 Storage 的圖片 URL。取消編輯時要刪掉,避免孤兒檔。
+  _newUploads = [];
+  // 取消(或切頁)時,把上傳了卻沒儲存的圖從 Storage 刪掉
+  _discardNewUploads(){ const u=this._newUploads; this._newUploads=[]; if(u.length) this.deleteImages(u); }
+
   setLayout = (e)=>{ const m=e.currentTarget.dataset.val; this.setState({layoutMode:m}, ()=>this.persist()); };
-  go = (e)=>{ const k=e.currentTarget.dataset.key; this.setState({section:k, editing:null, editingId:null}); };
-  openNew = ()=> this.setState({editing:this.blank(), editingId:null});
-  openEdit = (e)=>{ const id=e.currentTarget.dataset.key; const w=this.state.watches.find(x=>x.id===id); if(w) this.setState({editing:JSON.parse(JSON.stringify(w)), editingId:id}); };
-  closeEdit = ()=> this.setState({editing:null, editingId:null});
+  go = (e)=>{ const k=e.currentTarget.dataset.key; if(this.state.editing) this._discardNewUploads(); this.setState({section:k, editing:null, editingId:null}); };
+  openNew = ()=>{ this._newUploads=[]; this.setState({editing:this.blank(), editingId:null}); };
+  openEdit = (e)=>{ const id=e.currentTarget.dataset.key; const w=this.state.watches.find(x=>x.id===id); if(w){ this._newUploads=[]; this.setState({editing:JSON.parse(JSON.stringify(w)), editingId:id}); } };
+  closeEdit = ()=>{ this._discardNewUploads(); this.setState({editing:null, editingId:null}); };
 
   onField = (e)=>{ const t=e.target; const v=t.type==="checkbox"?t.checked:t.value; const n=t.name; this.setState(s=>({editing:{...s.editing,[n]:v}})); };
   onSet = (e)=>{ const n=e.target.name, c=e.target.checked; this.setState(s=>({editing:{...s.editing,set:{...s.editing.set,[n]:c}}})); };
@@ -610,6 +622,7 @@ class Component extends DCLogic {
         await uploadBytes(r, f);
         return getDownloadURL(r);
       }));
+      this._newUploads.push(...urls); // 記下來:取消編輯時要清掉
       this.setState(s=>({editing:{...s.editing,images:[...(s.editing.images||[]),...urls]}}));
       this.toastMsg(`已加入 ${urls.length} 張`);
     } catch(err){ console.error('upload failed',err); this.toastMsg("上傳失敗"); }
@@ -622,9 +635,15 @@ class Component extends DCLogic {
     if(!ed.brand||!ed.name){ this.toastMsg("請填寫品牌與型號名稱"); return; }
     const id = this.state.editingId || ("w"+Date.now());
     const data = {...ed, id};
+    // 儲存前先記下原本文件的圖片,成功後把「被移除的舊圖」與「上傳了又移除的新圖」從 Storage 刪掉
+    const prev = this.state.editingId ? this.state.watches.find(w=>w.id===this.state.editingId) : null;
     try {
       const { doc, setDoc } = window.__fs;
       await setDoc(doc(window.__db,'watches',id), data);
+      const keep = new Set(data.images||[]);
+      const orphans = [...new Set([...(prev&&prev.images||[]), ...this._newUploads].filter(u=>!keep.has(u)))];
+      this._newUploads = [];
+      if(orphans.length) this.deleteImages(orphans); // 清孤兒檔,失敗不阻斷
       this.setState(s=>({
         watches: s.editingId ? s.watches.map(w=>w.id===s.editingId?data:w) : [data,...s.watches],
         editing:null, editingId:null
@@ -949,7 +968,6 @@ class Component extends DCLogic {
   <option value="De Bethune">
   <option value="Seiko 精工">
   <option value="Grand Seiko 大精工">
-  <option value="Citizen 西鐵城">
   <option value="Casio G-Shock">
   <option value="Hamilton 漢米頓">
   <option value="Oris 豪利時">
@@ -971,24 +989,20 @@ class Component extends DCLogic {
   <option value="Serica">
   <option value="Ming">
   <option value="Certina 雪鐵納">
-  <option value="Mido 美度">
   <option value="Titoni 梅花">
   <option value="Cyma 西馬">
   <option value="Edox 依度">
   <option value="Roamer 羅馬">
   <option value="Eterna 綺年華">
   <option value="Doxa 時度">
-  <option value="Universal Genève 浪琴宇宙">
+  <option value="Universal Genève 環球錶">
   <option value="Movado 摩凡陀">
   <option value="Baume & Mercier 名士">
   <option value="Maurice Lacroix 艾美">
   <option value="Alpina">
-  <option value="Frederique Constant 康斯登">
   <option value="Chronoswiss 瑞寶">
   <option value="Carl F. Bucherer 寶齊萊">
   <option value="Bulova 寶路華">
-  <option value="Hamilton 漢米頓">
-  <option value="Tissot 天梭">
   <option value="Victorinox 維氏">
   <option value="Sinn">
   <option value="Damasko">

@@ -17,12 +17,16 @@
 <meta property="og:description" content="精選進口二手與全新腕錶，現貨實拍、正品保證、可面交驗錶。">
 <meta property="og:url" content="https://barthon-watch.web.app/">
 <meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="https://barthon-watch.web.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="BarthON 鐘錶｜進口腕錶・藏家精選">
 <meta name="twitter:description" content="精選進口二手與全新腕錶，現貨實拍、正品保證、可面交驗錶。">
+<meta name="twitter:image" content="https://barthon-watch.web.app/og-image.png">
 <!-- 結構化資料：商家 -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Store","name":"BarthON 鐘錶","description":"精選進口二手與全新腕錶，現貨實拍、正品保證、可面交驗錶。","url":"https://barthon-watch.web.app/","image":"https://barthon-watch.web.app/","priceRange":"$$$"}
+{"@context":"https://schema.org","@type":"Store","name":"BarthON 鐘錶","description":"精選進口二手與全新腕錶，現貨實拍、正品保證、可面交驗錶。","url":"https://barthon-watch.web.app/","image":"https://barthon-watch.web.app/og-image.png","priceRange":"$$$"}
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -572,6 +576,8 @@
         <input name="contact" placeholder="聯絡方式 LINE／電話／Email *" autocomplete="off" maxlength="160" required>
       </div>
       <input id="inqWatch" name="watch" placeholder="想詢問的錶款（選填）" autocomplete="off" maxlength="120">
+      <!-- 蜜罐欄位:真人看不到也不會填;機器人填了就靜默丟棄 -->
+      <input name="company" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none">
       <textarea name="message" rows="3" placeholder="想問的問題,例如約面交、報價、規格… *" maxlength="1800" required></textarea>
       <button type="submit" class="btn btn-gold"><i data-lucide="send"></i>送出詢問</button>
       <p class="inq-status" id="inqStatus" aria-live="polite"></p>
@@ -671,7 +677,7 @@
           const cond=w.condition==="全新"?"全新":((set.box&&set.card)?((w.pct||"")+"・全套"):(w.pct||""));
           const meta=[w.year,cond].filter(Boolean).join("・")||"現貨";
           const saleState = w.saleState || (w.sold?"sold":"sale");
-          WATCHES.push({id:w.id,brand:w.brand,name:w.name,cat:w.cat,badge:w.badge||"",badges:Array.isArray(w.badges)?w.badges:[],price:w.price,meta,ref:w.ref,year:w.year,movement:w.movement,size:w.size,material:w.material,water:w.water,accessories:w.accessories,desc:w.desc,imgs:w.images||[],saleState,sold:saleState==="sold",soldAt:w.soldAt||0});
+          WATCHES.push({id:w.id,brand:w.brand,name:w.name,cat:w.cat,badge:w.badge||"",badges:Array.isArray(w.badges)?w.badges:[],price:w.price,meta,condition:w.condition,ref:w.ref,year:w.year,movement:w.movement,size:w.size,material:w.material,water:w.water,accessories:w.accessories,warranty:w.warranty,origin:w.origin,desc:w.desc,imgs:w.images||[],saleState,sold:saleState==="sold",soldAt:w.soldAt||0});
         });
       }
       if(cSnap.exists()) _applyCopy(cSnap.data());
@@ -718,12 +724,18 @@
       const watch = (fd.get("watch")||"").toString().trim();
       const message = (fd.get("message")||"").toString().trim();
       if(!name || !contact || !message){ setStatus("請填寫稱呼、聯絡方式與訊息。", false); return; }
+      // 蜜罐:機器人才會填這個隱藏欄位 → 假裝成功,不寫入
+      if((fd.get("company")||"").toString().trim()){ form.reset(); setStatus("已送出,我會盡快回覆你!", true); return; }
+      // 冷卻:同一裝置 60 秒內只能送一次,避免灌單轟炸
+      let lastSent = 0; try{ lastSent = Number(localStorage.getItem("barthon_inqAt")||0); }catch(e){}
+      if(Date.now() - lastSent < 60000){ setStatus("送出太頻繁,請稍候一分鐘再試。", false); return; }
       const btn = form.querySelector("button[type=submit]");
       if(btn){ btn.disabled=true; btn.textContent="送出中…"; }
       try {
         const now = new Date();
         const date = now.getFullYear()+"/"+String(now.getMonth()+1).padStart(2,"0")+"/"+String(now.getDate()).padStart(2,"0");
         await addDoc(collection(db,"inquiries"), { name, contact, watch, message, date, status:"新" });
+        try{ localStorage.setItem("barthon_inqAt", String(Date.now())); }catch(e){}
         form.reset();
         setStatus("已送出,我會盡快回覆你!", true);
       } catch(err){
@@ -868,6 +880,7 @@
       ["型號 Ref.", w.ref],["年份 Year", w.year],["機芯 Movement", w.movement],
       ["錶徑 Size", w.size],["材質 Case", w.material],["防水 W.R.", w.water],
       ["類型 Type", w.cat],["配件 Set", w.accessories],
+      ["保固 Warranty", w.warranty],["來源 Origin", w.origin],
     ];
     detailInner.innerHTML = `
       <div class="d-media">

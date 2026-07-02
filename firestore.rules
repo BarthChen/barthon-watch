@@ -20,13 +20,20 @@ service cloud.firestore {
     }
 
     // 瀏覽統計:訪客可累加計數(create/update),僅管理員可讀。
-    // 欄位限定,值為數字/map,避免被塞入任意資料;計數類資料風險低。
+    // 欄位限定、值為數字/map;update 時 views/visitors 只能遞增,避免被惡意歸零或竄改。
+    function statsFieldsOk() {
+      return request.resource.data.keys().hasOnly(['date','views','visitors','clicks','updated'])
+             && (!('views' in request.resource.data)    || request.resource.data.views is number)
+             && (!('visitors' in request.resource.data) || request.resource.data.visitors is number)
+             && (!('clicks' in request.resource.data)   || request.resource.data.clicks is map);
+    }
     match /stats/{day} {
       allow read: if isAdmin();
-      allow write: if request.resource.data.keys().hasOnly(['date','views','visitors','clicks','updated'])
-                   && (!('views' in request.resource.data)    || request.resource.data.views is number)
-                   && (!('visitors' in request.resource.data) || request.resource.data.visitors is number)
-                   && (!('clicks' in request.resource.data)   || request.resource.data.clicks is map);
+      allow create: if statsFieldsOk();
+      allow update: if statsFieldsOk()
+                    && (!('views' in request.resource.data)    || request.resource.data.views >= resource.data.get('views', 0))
+                    && (!('visitors' in request.resource.data) || request.resource.data.visitors >= resource.data.get('visitors', 0));
+      // delete 未開放 → 一律拒絕
     }
 
     // 詢問單：訪客可送出(create),僅管理員可讀取/更新/刪除

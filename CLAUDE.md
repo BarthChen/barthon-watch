@@ -78,8 +78,8 @@ GitHub Actions 自動部署,**不需要任何本機指令或手動步驟**。三
 ---
 
 ## 5. 資料模型(Firestore,database = `barthon`)
-- `watches/{id}` — 一支腕錶。欄位:`brand, name, cat, price, badge, condition, pct, set{box,card,manual,strap}, ref, year, movement, size, material, water, accessories, desc, images[](Storage URL), status('published'|'draft')`。
-- `site/copy` — 網站文案單一文件:`heroImg, heroTitle, heroLead, aboutText, lineId, phone, fbUrl, igUrl`。
+- `watches/{id}` — 一支腕錶。欄位:`brand, name, cat, price, badge, badges[], condition, pct, set{box,card,manual,strap}, warranty, origin, ref, year, movement, size, material, water, accessories, desc, images[](Storage URL), status('published'|'draft'), saleState('sale'|'reserved'|'sold'), soldAt`。
+- `site/copy` — 網站文案單一文件:`heroImg, aboutImg, heroTitle, heroLead, aboutText, lineId, phone, fbUrl, igUrl`。
 - `inquiries/{id}` — 客戶詢問:`name, contact, watch, message, date, status('新'|'處理中'|'已成交')`。前台表單寫入,後台讀。
 
 ---
