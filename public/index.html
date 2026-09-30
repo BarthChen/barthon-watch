@@ -847,7 +847,14 @@
   }
   function fmtPrice(p){
     if(!p) return p;
-    return p.replace(/\d+/g, n => Number(n).toLocaleString());
+    const str = String(p);
+    const match = str.match(/^(NT\$\s*)?([0-9,]+)/);
+    if(!match) return str;
+    const prefix = match[1] || 'NT$';
+    const digits = match[2].replace(/,/g, '');
+    const num = parseInt(digits, 10);
+    if(isNaN(num)) return str;
+    return prefix + num.toLocaleString();
   }
   const priceNum = (w)=>{ const n=parseInt(String(w.price||"").replace(/[^\d]/g,""),10); return isNaN(n)?null:n; };
   function renderGrid(){
