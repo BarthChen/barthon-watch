@@ -6,7 +6,10 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['functions/**', 'firebase.json']
+    paths: 
+      - 'functions/**'
+      - 'firebase.json'
+      - '.github/workflows/deploy-functions.yml'
 jobs:
   functions:
     runs-on: ubuntu-latest
