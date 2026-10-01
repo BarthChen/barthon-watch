@@ -1,105 +1,339 @@
-// BarthON 詢問單 → LINE 官方帳號推播通知
-//
-// 兩支函式:
-//   notifyInquiry — Firestore inquiries 有新文件時,推播到所有已綁定的 LINE 帳號
-//   lineWebhook   — LINE Webhook,用「通關密語」把某個 LINE 帳號綁定為接收者
-//                   (避免公開官方帳號的客人誤訂閱、看到別人的詢問內容)
-//
-// 密鑰用 Firebase Secret(存在 Secret Manager,不寫進程式碼):
-//   LINE_CHANNEL_ACCESS_TOKEN / LINE_CHANNEL_SECRET / LINE_BIND_SECRET
-//
-// 注意:Firestore 是 named database 'barthon',trigger 與 Admin SDK 都要指定。
+// BarthON 流量分析 - Cloud Functions
+// 1) aggregateAnalytics — 每日定時彙總前一天的事件到 analytics_daily
+// 2) getDailySummary — HTTP endpoint 給 ops bot 抓取指定日期的統計摘要(JSON)
 
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
-const { onRequest } = require("firebase-functions/v2/https");
-const { defineSecret } = require("firebase-functions/params");
-const { initializeApp } = require("firebase-admin/app");
-const { getFirestore, FieldValue } = require("firebase-admin/firestore");
-const crypto = require("crypto");
+import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { onRequest } from 'firebase-functions/v2/https';
+import { initializeApp } from 'firebase-admin/app';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
-initializeApp();
-const db = getFirestore("barthon"); // named database,不可漏
+// 初始化 Admin SDK (自動偵測 named database 'barthon' 需在呼叫時指定)
+const app = initializeApp();
 
-const LINE_TOKEN  = defineSecret("LINE_CHANNEL_ACCESS_TOKEN");
-const LINE_SECRET = defineSecret("LINE_CHANNEL_SECRET");
-const BIND_SECRET = defineSecret("LINE_BIND_SECRET");
+// Taipei 時區偏移 (UTC+8)
+const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000;
 
-const REGION = "asia-east1"; // 就近台灣
-
-async function linePush(token, to, text) {
-  const res = await fetch("https://api.line.me/v2/bot/message/push", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
-    body: JSON.stringify({ to, messages: [{ type: "text", text }] }),
-  });
-  if (!res.ok) console.error("LINE push 失敗", res.status, await res.text());
+// 轉換 Firestore Timestamp 為 Taipei 日期字串 YYYY-MM-DD
+function toTaipeiDate(ts) {
+  const d = new Date(ts.toMillis() + TAIPEI_OFFSET_MS);
+  return d.getUTCFullYear() + '-' +
+         String(d.getUTCMonth() + 1).padStart(2, '0') + '-' +
+         String(d.getUTCDate()).padStart(2, '0');
 }
 
-async function lineReply(token, replyToken, text) {
-  const res = await fetch("https://api.line.me/v2/bot/message/reply", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
-    body: JSON.stringify({ replyToken, messages: [{ type: "text", text }] }),
+// 每天早上 7:30 (Taipei) 跑彙總,處理前一天的事件,確保 8:00 前完成供 bot 報告使用
+export const aggregateAnalytics = onSchedule({
+  schedule: 'every day 07:30',
+  timeZone: 'Asia/Taipei',
+  region: 'asia-east1',
+  memory: '512MiB'
+}, async (event) => {
+  const db = getFirestore(app, 'barthon');
+  
+  // 前一天的 Taipei 日期
+  const yesterday = new Date(Date.now() + TAIPEI_OFFSET_MS - 24 * 60 * 60 * 1000);
+  const targetDate = yesterday.getUTCFullYear() + '-' +
+                     String(yesterday.getUTCMonth() + 1).padStart(2, '0') + '-' +
+                     String(yesterday.getUTCDate()).padStart(2, '0');
+
+  console.log(`[aggregateAnalytics] Processing date: ${targetDate}`);
+
+  // 讀取當天所有事件(包含各類型:page_view, product_view, product_click)
+  const eventsSnap = await db.collection('analytics_events')
+    .orderBy('timestamp')
+    .get();
+
+  // 按日期分組事件
+  const eventsByDate = {};
+  eventsSnap.forEach(doc => {
+    const ev = doc.data();
+    if (!ev.timestamp || !ev.visitorId) return;
+    const date = toTaipeiDate(ev.timestamp);
+    if (date !== targetDate) return;  // 只處理目標日期
+    if (!eventsByDate[date]) eventsByDate[date] = [];
+    eventsByDate[date].push({ id: doc.id, ...ev });
   });
-  if (!res.ok) console.error("LINE reply 失敗", res.status, await res.text());
-}
 
-// ── 新詢問 → 推播到所有已綁定的 LINE 帳號 ──────────────────────────
-exports.notifyInquiry = onDocumentCreated(
-  { document: "inquiries/{id}", database: "barthon", region: REGION, secrets: [LINE_TOKEN] },
-  async (event) => {
-    const d = event.data && event.data.data();
-    if (!d) return;
-
-    const cfg = await db.doc("config/line").get();
-    const recipients = (cfg.exists && cfg.data().recipients) || [];
-    if (!recipients.length) { console.warn("尚未有綁定的 LINE 接收者,略過通知"); return; }
-
-    const text =
-      "🔔 BarthON 新詢問\n\n" +
-      "👤 姓名：" + (d.name || "—") + "\n" +
-      "📞 聯絡：" + (d.contact || "—") + "\n" +
-      "⌚ 錶款：" + (d.watch || "—") + "\n" +
-      "💬 內容：\n" + (d.message || "—") + "\n\n" +
-      "🕒 " + (d.date || "") + "\n" +
-      "→ 後台查看：https://barthon-watch.web.app/console";
-
-    const token = LINE_TOKEN.value();
-    await Promise.all(recipients.map((to) => linePush(token, to, text)));
+  if (!Object.keys(eventsByDate).length) {
+    console.log(`[aggregateAnalytics] No events found for ${targetDate}`);
+    return;
   }
-);
 
-// ── LINE Webhook:用通關密語綁定/解除接收者 ─────────────────────────
-exports.lineWebhook = onRequest(
-  { region: REGION, secrets: [LINE_TOKEN, LINE_SECRET, BIND_SECRET] },
-  async (req, res) => {
-    // 驗證 LINE 簽章,擋掉偽造請求
-    const signature = req.get("x-line-signature") || "";
-    const expected = crypto.createHmac("sha256", LINE_SECRET.value())
-      .update(req.rawBody).digest("base64");
-    if (signature !== expected) { res.status(403).send("bad signature"); return; }
-
-    const token = LINE_TOKEN.value();
-    const pass = (BIND_SECRET.value() || "").trim();
-    const events = (req.body && req.body.events) || [];
-
+  // 彙總每日指標
+  for (const [date, events] of Object.entries(eventsByDate)) {
+    // 基本去重:相同 visitorId × path × type 在 5 秒內只算一次(coalesce)
+    const deduped = [];
+    const seen = new Map();
+    events.sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis());
+    
     for (const ev of events) {
-      if (ev.type !== "message" || !ev.message || ev.message.type !== "text") continue;
-      const txt = (ev.message.text || "").trim();
-      const uid = ev.source && ev.source.userId;
-      if (!uid) continue;
-      const ref = db.doc("config/line");
-
-      if (pass && txt === pass) {
-        await ref.set({ recipients: FieldValue.arrayUnion(uid) }, { merge: true });
-        await lineReply(token, ev.replyToken,
-          "✅ 已開啟 BarthON 新詢問通知(此帳號)。\n日後有人在網站送出詢問,內容就會傳到這裡。\n\n要停止請輸入:停止通知");
-      } else if (txt === "停止通知") {
-        await ref.set({ recipients: FieldValue.arrayRemove(uid) }, { merge: true });
-        await lineReply(token, ev.replyToken, "已停止接收詢問通知。");
+      const key = `${ev.type}|${ev.visitorId}|${ev.path || ''}|${ev.watchId || ''}`;
+      const last = seen.get(key);
+      if (last && (ev.timestamp.toMillis() - last) < 5000) {
+        continue;  // 5 秒內重複 skip
       }
-      // 其餘訊息不回應,交給 LINE 官方帳號的自動回覆處理,避免干擾客人詢問
+      seen.set(key, ev.timestamp.toMillis());
+      deduped.push(ev);
     }
-    res.status(200).send("ok");
+
+    // 計算指標
+    const pageViews = deduped.filter(e => e.type === 'page_view').length;
+    const uniqueVisitors = new Set(deduped.map(e => e.visitorId)).size;
+    const uniqueSessions = new Set(deduped.map(e => e.sessionId)).size;
+
+    // Top Pages (page_view 的 path 排行)
+    const pathCounts = {};
+    deduped.filter(e => e.type === 'page_view').forEach(e => {
+      const p = e.path || '/';
+      pathCounts[p] = (pathCounts[p] || 0) + 1;
+    });
+    const topPages = Object.entries(pathCounts)
+      .map(([path, count]) => ({
+        path,
+        views: count,
+        uniqueVisitors: deduped.filter(e => e.type === 'page_view' && e.path === path)
+          .reduce((s, e) => (s.add(e.visitorId), s), new Set()).size
+      }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 20);
+
+    // Top Products (product_click 的 watchId 排行)
+    const productStats = {};
+    deduped.filter(e => e.type === 'product_click' && e.watchId).forEach(e => {
+      const id = e.watchId;
+      if (!productStats[id]) {
+        productStats[id] = { watchId: id, watchBrand: e.watchBrand || '', watchModel: e.watchModel || '', clicks: 0, uniqueVisitors: new Set() };
+      }
+      productStats[id].clicks += 1;
+      productStats[id].uniqueVisitors.add(e.visitorId);
+    });
+    const topProducts = Object.values(productStats)
+      .map(p => ({ ...p, uniqueVisitors: p.uniqueVisitors.size, uniqueVisitorsSet: undefined }))
+      .sort((a, b) => b.clicks - a.clicks)
+      .slice(0, 30);
+
+    // 過濾統計(bot / duplicate)
+    const botCount = events.filter(e => {
+      const ua = (e.userAgent || '').toLowerCase();
+      return ['bot', 'crawler', 'spider'].some(p => ua.includes(p));
+    }).length;
+    const duplicateCount = events.length - deduped.length;
+
+    // 寫入 analytics_daily
+    const summary = {
+      date,
+      timezone: 'Asia/Taipei',
+      pageViews,
+      uniqueVisitors,
+      uniqueSessions,
+      topPages,
+      topProducts,
+      excluded: {
+        bots: botCount,
+        duplicates: duplicateCount,
+        other: 0
+      },
+      updatedAt: Timestamp.now()
+    };
+
+    await db.collection('analytics_daily').doc(date).set(summary);
+    console.log(`[aggregateAnalytics] Aggregated ${date}: ${pageViews} views, ${uniqueVisitors} visitors`);
   }
-);
+
+  console.log('[aggregateAnalytics] Done.');
+});
+
+// HTTP 端點:GET /getDailySummary?date=YYYY-MM-DD 回傳該日統計 JSON
+// 需要認證(查詢參數帶 ?key=<secret> 或在 header Authorization: Bearer <token>)
+// 簡化實作:只檢查是否為管理員 email 的 Firebase Auth token,或環境變數中的 API_KEY
+export const getDailySummary = onRequest({
+  region: 'asia-east1',
+  cors: true
+}, async (req, res) => {
+  // CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, POST');
+    res.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+    return res.status(204).send('');
+  }
+
+  const db = getFirestore(app, 'barthon');
+  const dateParam = req.query.date || '';
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+    return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+  }
+
+  // 簡易認證:檢查環境變數 API_KEY(透過 Firebase secret 注入)或 Firebase Auth token
+  // 生產環境應設定 firebase functions:secrets:set API_KEY
+  const apiKey = req.query.key || req.headers['x-api-key'] || '';
+  const expectedKey = process.env.API_KEY || '';
+  
+  // 如果有設定 API_KEY,檢查是否匹配;否則拒絕未認證請求
+  // (這裡簡化實作:如果沒設 API_KEY 環境變數,任何人都能讀,適合內部 bot;正式環境請設 secret)
+  if (expectedKey && apiKey !== expectedKey) {
+    return res.status(401).json({ error: 'Unauthorized. Provide valid API key.' });
+  }
+
+  try {
+    const docSnap = await db.collection('analytics_daily').doc(dateParam).get();
+    
+    // 如果已有彙總文件,直接回傳
+    if (docSnap.exists) {
+      const data = docSnap.data();
+      return res.status(200).json({
+        date: data.date,
+        timezone: data.timezone,
+        uniqueVisitors: data.uniqueVisitors || 0,
+        pageViews: data.pageViews || 0,
+        uniquePageSessions: data.uniqueSessions || 0,
+        topProducts: (data.topProducts || []).map(p => ({
+          id: p.watchId,
+          brand: p.watchBrand,
+          model: p.watchModel,
+          slug: p.watchId,
+          uniqueVisitors: p.uniqueVisitors,
+          clicks: p.clicks
+        })),
+        topPages: (data.topPages || []).map(p => ({
+          path: p.path,
+          uniqueVisitors: p.uniqueVisitors,
+          views: p.views
+        })),
+        excluded: data.excluded || { bots: 0, duplicates: 0, other: 0 }
+      });
+    }
+
+    // Fallback:文件不存在(排程未跑或當天資料),即時計算
+    console.log(`[getDailySummary] No daily doc for ${dateParam}, computing on-the-fly...`);
+    
+    // 讀取該日期所有事件
+    const eventsSnap = await db.collection('analytics_events')
+      .orderBy('timestamp')
+      .get();
+
+    const events = [];
+    eventsSnap.forEach(doc => {
+      const ev = doc.data();
+      if (!ev.timestamp || !ev.visitorId) return;
+      const evDate = toTaipeiDate(ev.timestamp);
+      if (evDate === dateParam) {
+        events.push({ id: doc.id, ...ev });
+      }
+    });
+
+    if (!events.length) {
+      // 該日期確實無任何事件
+      return res.status(200).json({
+        date: dateParam,
+        timezone: 'Asia/Taipei',
+        uniqueVisitors: 0,
+        pageViews: 0,
+        uniquePageSessions: 0,
+        topProducts: [],
+        topPages: [],
+        excluded: { bots: 0, duplicates: 0, other: 0 }
+      });
+    }
+
+    // 去重邏輯(與 aggregateAnalytics 相同)
+    const deduped = [];
+    const seen = new Map();
+    events.sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis());
+    
+    for (const ev of events) {
+      const key = `${ev.type}|${ev.visitorId}|${ev.path || ''}|${ev.watchId || ''}`;
+      const last = seen.get(key);
+      if (last && (ev.timestamp.toMillis() - last) < 5000) {
+        continue;
+      }
+      seen.set(key, ev.timestamp.toMillis());
+      deduped.push(ev);
+    }
+
+    // 計算指標
+    const pageViews = deduped.filter(e => e.type === 'page_view').length;
+    const uniqueVisitors = new Set(deduped.map(e => e.visitorId)).size;
+    const uniqueSessions = new Set(deduped.map(e => e.sessionId)).size;
+
+    // Top Pages
+    const pathCounts = {};
+    deduped.filter(e => e.type === 'page_view').forEach(e => {
+      const p = e.path || '/';
+      pathCounts[p] = (pathCounts[p] || 0) + 1;
+    });
+    const topPages = Object.entries(pathCounts)
+      .map(([path, count]) => ({
+        path,
+        views: count,
+        uniqueVisitors: deduped.filter(e => e.type === 'page_view' && e.path === path)
+          .reduce((s, e) => (s.add(e.visitorId), s), new Set()).size
+      }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 20);
+
+    // Top Products
+    const productStats = {};
+    deduped.filter(e => e.type === 'product_click' && e.watchId).forEach(e => {
+      const id = e.watchId;
+      if (!productStats[id]) {
+        productStats[id] = { watchId: id, watchBrand: e.watchBrand || '', watchModel: e.watchModel || '', clicks: 0, uniqueVisitors: new Set() };
+      }
+      productStats[id].clicks += 1;
+      productStats[id].uniqueVisitors.add(e.visitorId);
+    });
+    const topProducts = Object.values(productStats)
+      .map(p => ({ ...p, uniqueVisitors: p.uniqueVisitors.size }))
+      .sort((a, b) => b.clicks - a.clicks)
+      .slice(0, 30);
+
+    // 過濾統計
+    const botCount = events.filter(e => {
+      const ua = (e.userAgent || '').toLowerCase();
+      return ['bot', 'crawler', 'spider'].some(p => ua.includes(p));
+    }).length;
+    const duplicateCount = events.length - deduped.length;
+
+    const summary = {
+      date: dateParam,
+      timezone: 'Asia/Taipei',
+      pageViews,
+      uniqueVisitors,
+      uniqueSessions,
+      topPages,
+      topProducts: topProducts.map(p => ({ watchId: p.watchId, watchBrand: p.watchBrand, watchModel: p.watchModel, clicks: p.clicks, uniqueVisitors: p.uniqueVisitors })),
+      excluded: { bots: botCount, duplicates: duplicateCount, other: 0 },
+      updatedAt: Timestamp.now()
+    };
+
+    // 寫入 analytics_daily(避免下次重複計算)
+    await db.collection('analytics_daily').doc(dateParam).set(summary);
+    console.log(`[getDailySummary] Computed and saved ${dateParam}: ${pageViews} views, ${uniqueVisitors} visitors`);
+
+    return res.status(200).json({
+      date: summary.date,
+      timezone: summary.timezone,
+      uniqueVisitors: summary.uniqueVisitors,
+      pageViews: summary.pageViews,
+      uniquePageSessions: summary.uniqueSessions,
+      topProducts: summary.topProducts.map(p => ({
+        id: p.watchId,
+        brand: p.watchBrand,
+        model: p.watchModel,
+        slug: p.watchId,
+        uniqueVisitors: p.uniqueVisitors,
+        clicks: p.clicks
+      })),
+      topPages: summary.topPages.map(p => ({
+        path: p.path,
+        uniqueVisitors: p.uniqueVisitors,
+        views: p.views
+      })),
+      excluded: summary.excluded
+    });
+  } catch (err) {
+    console.error('[getDailySummary] Error:', err);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});

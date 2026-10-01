@@ -217,6 +217,26 @@ onAuthStateChanged(auth, user => {
             </div>
           </div>
 
+          <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;margin-bottom:24px">
+            <div style="padding:18px 22px;border-bottom:1px solid rgba(255,255,255,.06)">
+              <h3 style="font-size:15px;font-weight:500;color:#ececee">熱門頁面</h3>
+              <p style="font-size:12px;color:#7c7c84;margin-top:3px">最多人瀏覽的頁面路徑（累計）</p>
+            </div>
+            <sc-if value="{{ pageRankEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:34px 22px;text-align:center;color:#7c7c84;font-size:14px">尚無頁面瀏覽資料。</div>
+            </sc-if>
+            <sc-for list="{{ pageRank }}" as="p" hint-placeholder-count="0">
+              <div style="padding:12px 22px;border-bottom:1px solid rgba(255,255,255,.05)">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <span style="width:24px;font-family:'Cormorant Garamond',serif;font-size:18px;color:#7c84c8;flex:none">{{ p.rank }}</span>
+                  <div style="flex:1;min-width:0;font-size:13px;color:#ececee;font-family:monospace">{{ p.path }}</div>
+                  <div style="flex:none;font-size:13px;color:#a0a8d8">{{ p.views }} 次</div>
+                </div>
+                <div style="{{ p.barStyle }}"></div>
+              </div>
+            </sc-for>
+          </div>
+
           <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden">
             <div style="padding:18px 22px;border-bottom:1px solid rgba(255,255,255,.06)">
               <h3 style="font-size:15px;font-weight:500;color:#ececee">腕錶點擊排行</h3>
@@ -541,8 +561,8 @@ class Component extends DCLogic {
     try { const s = JSON.parse(localStorage.getItem(this.KEY)); if(s?.layoutMode) layoutMode = s.layoutMode; } catch(e){}
     this.state = {
       layoutMode, section: "dashboard",
-      watches: [], inquiries: [], copy: this.DEFC,
-      editing: null, editingId: null, stats: [],
+      watches: [], inquiries: [], copy: this.DEFC, analyticsDaily: [],
+      editing: null, editingId: null,
       search: "", statusFilter: "all", toast: null, loading: true
     };
   }
@@ -561,17 +581,17 @@ class Component extends DCLogic {
       await this._waitForFirebase();
       const db = window.__db;
       const { collection, doc, setDoc, getDocs, getDoc } = window.__fs;
-      const [wSnap, iSnap, cSnap, stSnap] = await Promise.all([
+      const [wSnap, iSnap, cSnap, dailySnap] = await Promise.all([
         getDocs(collection(db,'watches')),
         getDocs(collection(db,'inquiries')),
         getDoc(doc(db,'site','copy')),
-        getDocs(collection(db,'stats'))
+        getDocs(collection(db,'analytics_daily'))
       ]);
       let watches=[]; wSnap.forEach(d=>watches.push({id:d.id,...d.data()}));
       let inquiries=[]; iSnap.forEach(d=>inquiries.push({id:d.id,...d.data()}));
-      let stats=[]; stSnap.forEach(d=>stats.push({id:d.id,...d.data()}));
+      let analyticsDaily=[]; dailySnap.forEach(d=>analyticsDaily.push({id:d.id,...d.data()}));
       const copy = cSnap.exists() ? cSnap.data() : this.DEFC;
-      this.setState({watches, inquiries, copy, stats, loading:false});
+      this.setState({watches, inquiries, copy, analyticsDaily, loading:false});
     } catch(e){ console.error(e); this.setState({loading:false}); }
   }
   persist(){ try{ localStorage.setItem(this.KEY, JSON.stringify({layoutMode:this.state.layoutMode})); }catch(e){} }
@@ -792,28 +812,29 @@ class Component extends DCLogic {
     this.toastMsg("已複製 FB 貼文文案，貼到粉專即可");
   };
 
-  // 瀏覽統計：把 stats/{日期} 資料整理成儀表板要的數字與排行
+  // 流量分析統計：從 analytics_daily 讀取每日彙總數據
   computeStats(){
-    const stats=this.state.stats||[];
+    const daily=this.state.analyticsDaily||[];
     const watches=this.state.watches||[];
     const nameOf=(id)=>{ const w=watches.find(x=>x.id===id); return w?((w.brand?w.brand+" ":"")+w.name) : ("(已刪除 "+id+")"); };
     const d=new Date();
     const today=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
     // 最近 14 天的日期序列(含今天)
     const days=[]; for(let i=13;i>=0;i--){ const t=new Date(d); t.setDate(d.getDate()-i); days.push(t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0")); }
-    const byDate={}; stats.forEach(r=>{ byDate[r.id||r.date]=r; });
-    const viewsOn=(k)=>{ const r=byDate[k]; return (r&&typeof r.views==="number")?r.views:0; };
-    const visOn=(k)=>{ const r=byDate[k]; return (r&&typeof r.visitors==="number")?r.visitors:0; };
+    const byDate={}; daily.forEach(r=>{ byDate[r.id||r.date]=r; });
+    const viewsOn=(k)=>{ const r=byDate[k]; return (r&&typeof r.pageViews==="number")?r.pageViews:0; };
+    const visOn=(k)=>{ const r=byDate[k]; return (r&&typeof r.uniqueVisitors==="number")?r.uniqueVisitors:0; };
     const todayViews=viewsOn(today), todayVis=visOn(today);
     const last7=days.slice(-7);
     const wk=last7.reduce((a,k)=>a+viewsOn(k),0);
-    const totalViews=stats.reduce((a,r)=>a+((typeof r.views==="number")?r.views:0),0);
-    const totalVis=stats.reduce((a,r)=>a+((typeof r.visitors==="number")?r.visitors:0),0);
+    const wkVis=last7.reduce((a,k)=>a+visOn(k),0);
+    const totalViews=daily.reduce((a,r)=>a+((typeof r.pageViews==="number")?r.pageViews:0),0);
+    const totalVis=daily.reduce((a,r)=>a+((typeof r.uniqueVisitors==="number")?r.uniqueVisitors:0),0);
     const bigNum="font-family:'Cormorant Garamond',serif;font-size:34px;line-height:1";
     const statCards2=[
       {label:"今日瀏覽",value:todayViews,note:"次",numStyle:bigNum+";color:#e3c98c"},
-      {label:"今日訪客",value:todayVis,note:"人",numStyle:bigNum+";color:#5bbf8a"},
-      {label:"近 7 日瀏覽",value:wk,note:"次",numStyle:bigNum+";color:#ececee"},
+      {label:"今日訪客",value:todayVis,note:"人(不重複)",numStyle:bigNum+";color:#5bbf8a"},
+      {label:"近 7 日瀏覽",value:wk,note:"次・"+wkVis+" 人",numStyle:bigNum+";color:#ececee"},
       {label:"累計瀏覽",value:totalViews,note:"次・"+totalVis+" 人",numStyle:bigNum+";color:#ececee"}
     ];
     // 每日長條(以 14 天內最大瀏覽數為基準)
@@ -823,17 +844,26 @@ class Component extends DCLogic {
       return { date:k.slice(5), views:v, visitors:vis, tip:k+"：瀏覽 "+v+" 次／訪客 "+vis+" 人",
         barStyle:{width:"62%",height:v>0?Math.max(4,Math.round(v/maxV*100))+"%":"2px",borderRadius:"4px 4px 0 0",background:k===today?"#c8a667":"rgba(200,166,103,.42)"} };
     });
-    // 各錶點擊排行(跨所有日期加總)
+    // 各錶點擊排行(topProducts 已是跨所有日期聚合好的)
     const clickTotals={};
-    stats.forEach(r=>{ const c=r.clicks||{}; Object.keys(c).forEach(id=>{ const n=c[id]; if(typeof n==="number") clickTotals[id]=(clickTotals[id]||0)+n; }); });
+    daily.forEach(r=>{ const tp=r.topProducts||[]; tp.forEach(p=>{ const id=p.watchId; const n=p.clicks||0; clickTotals[id]=(clickTotals[id]||0)+n; }); });
     const ranked=Object.keys(clickTotals).map(id=>({id,count:clickTotals[id]})).sort((a,b)=>b.count-a.count);
     const maxC=Math.max(1,...ranked.map(r=>r.count));
     const watchRank=ranked.slice(0,15).map((r,i)=>({
       rank:i+1, name:nameOf(r.id), count:r.count,
       barStyle:{width:Math.round(r.count/maxC*100)+"%",height:"7px",borderRadius:"4px",background:"#c8a667",marginTop:"6px"}
     }));
-    return { statCards2, statDaily, watchRank, watchRankEmpty:watchRank.length===0,
-             statHasData:stats.length>0, statDays:days.length };
+    // 熱門頁面(topPages 聚合,取前 10)
+    const pageTotals={};
+    daily.forEach(r=>{ const tp=r.topPages||[]; tp.forEach(p=>{ const path=p.path; pageTotals[path]=(pageTotals[path]||0)+(p.views||0); }); });
+    const topPages=Object.entries(pageTotals).map(([path,views])=>({path,views})).sort((a,b)=>b.views-a.views).slice(0,10);
+    const maxP=Math.max(1,...topPages.map(p=>p.views));
+    const pageRank=topPages.map((p,i)=>({
+      rank:i+1, path:p.path, views:p.views,
+      barStyle:{width:Math.round(p.views/maxP*100)+"%",height:"6px",borderRadius:"4px",background:"#7c84c8",marginTop:"5px"}
+    }));
+    return { statCards2, statDaily, watchRank, watchRankEmpty:watchRank.length===0, pageRank, pageRankEmpty:pageRank.length===0,
+             statHasData:daily.length>0, statDays:days.length };
   }
 
   renderVals(){

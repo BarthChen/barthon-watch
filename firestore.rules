@@ -55,6 +55,30 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // 流量分析事件：訪客可建立(create only,不可讀取別人的),管理員可讀取所有
+    // 欄位驗證:type 限定值、timestamp 必須是近期時間、visitorId 必填
+    function analyticsEventValid() {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['type','visitorId','sessionId','timestamp','path','referrer','watchId','watchBrand','watchModel','userAgent','screen'])
+             && data.type in ['page_view', 'product_view', 'product_click']
+             && data.visitorId is string && data.visitorId.size() > 0 && data.visitorId.size() < 100
+             && data.timestamp is timestamp
+             && (request.time - data.timestamp < duration.value(120, 's'))  // 事件不能比現在早超過 2 分鐘
+             && (!('path' in data) || (data.path is string && data.path.size() < 300))
+             && (!('watchId' in data) || (data.watchId is string && data.watchId.size() < 100));
+    }
+    match /analytics_events/{id} {
+      allow create: if analyticsEventValid();
+      allow read, delete: if isAdmin();
+      allow update: if false;  // 事件一旦建立不可修改
+    }
+
+    // 流量分析每日彙總：只有管理員(或 Cloud Function 的 Admin SDK)能讀寫
+    match /analytics_daily/{day} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
     // 系統設定(如 config/line 的 LINE 接收者名單):
     // 只有雲端函式(Admin SDK,會略過規則)能存取;前端一律禁止讀寫。
     match /config/{doc} {

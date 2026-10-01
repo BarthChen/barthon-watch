@@ -701,7 +701,7 @@
     });
   }catch(e){} }
   (async function initFirebase(){
-    let db, collection, addDoc;
+    let db, collection, addDoc, analytics;
     try {
       const { firebaseConfig } = await import("./firebase-config.js");
       const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js");
@@ -709,6 +709,12 @@
       const app = initializeApp(firebaseConfig);
       db = fs.getFirestore(app, 'barthon');
       collection = fs.collection; addDoc = fs.addDoc;
+      
+      // 啟用流量追踪
+      const { Analytics } = await import("./analytics.js");
+      analytics = new Analytics(db, fs);
+      window.__analytics = analytics;
+      analytics.trackPageView(location.pathname);
       const [wSnap,cSnap] = await Promise.all([fs.getDocs(fs.collection(db,'watches')), fs.getDoc(fs.doc(db,'site','copy'))]);
       const pub=[];
       wSnap.forEach(d=>{ const w=d.data(); if(w.status==="published") pub.push(w); });
@@ -920,7 +926,9 @@
   function openDetail(id){
     const w = WATCHES.find(x=>x.id===id);
     if(!w) return;
-    if(window.__track) window.__track('click', id); // 記錄這支錶被點擊
+    if(window.__track) window.__track('click', id); // 舊的統計保留
+    if(window.__analytics) window.__analytics.trackProductClick(id, w.brand, w.name);  // 新分析
+    if(window.__analytics) window.__analytics.trackProductView(id, w.brand, w.name);   // 新分析
     history.replaceState(null, "", "#w"+id); // 供分享:網址帶上這支錶的深連結
     const shareUrl = location.origin + location.pathname + "#w" + id;
     const shareText = `${w.brand} ${w.name}｜BarthON 精選腕錶`;
@@ -1077,6 +1085,11 @@
 
   document.getElementById("yr").textContent = new Date().getFullYear();
   if(window.lucide) lucide.createIcons();
+
+  // flush analytics 事件在離開前
+  window.addEventListener('beforeunload', () => {
+    if (window.__analytics) window.__analytics.flush();
+  });
 
   // ---- guaranteed reveal fallback ----
   // If IntersectionObserver never fires (offscreen iframe, no-scroll contexts,
