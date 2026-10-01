@@ -69,7 +69,7 @@
 1. Cloud Console → Cloud Scheduler
 2. 看到 `firebase-schedule-aggregateAnalytics-asia-east1` job
 3. 狀態:Enabled
-4. 排程:`every day 02:00`
+4. 排程:`every day 07:30` (Taipei,確保 8:00 前完成)
 5. 「上次執行」有時間戳(或手動觸發一次)
 
 ### ✅ 每日摘要 API 可訪問
@@ -93,9 +93,9 @@ export BARTHON_API_KEY="your-secret-key"
 | 問題 | 檢查 | 解決 |
 |---|---|---|
 | 前台無事件寫入 | F12 Console / Network | 檢查 Firestore 規則、`analytics.js` 匯入 |
-| 後台顯示 0 | `analytics_daily` 是否有資料 | 手動觸發彙總 |
+| 後台顯示 0 | `analytics_daily` 是否有資料 | 手動觸發彙總或等 fallback 計算 |
 | Scheduler 不執行 | Cloud Scheduler job 狀態 | 檢查 App Engine 是否啟用 |
-| getDailySummary 404 | 該日期是否已彙總 | 查詢前一天或手動觸發 |
+| getDailySummary 空數據 | 該日期是否有事件 | 正常,表示該日無流量;fallback 已內建不回 404 |
 | Functions 部署失敗 | 錯誤訊息:Service Agent | IAM 設定 Cloud Scheduler Service Agent 角色 |
 
 詳細疑難排解見 `DEPLOY_ANALYTICS.md`。

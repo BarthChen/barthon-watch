@@ -50,7 +50,7 @@ firebase deploy --only functions:aggregateAnalytics
 ```
 
 **預期結果**:
-- Cloud Scheduler 自動建立排程:`every day 02:00` (Taipei 時間早上 10:00)
+- Cloud Scheduler 自動建立排程:`every day 07:30` (Taipei 時間早上 7:30,確保 8:00 前完成)
 - 函式部署到 `asia-east1` region
 
 **驗證**:
@@ -109,6 +109,8 @@ firebase deploy --only functions:getDailySummary
 curl "https://asia-east1-barthon-watch.cloudfunctions.net/getDailySummary?date=2026-10-01&key=YOUR_SECRET_KEY"
 ```
 
+**Fallback 機制**:如 `analytics_daily/{日期}` 文件不存在(排程尚未執行或首次請求),`getDailySummary` 會即時計算該日期的 `analytics_events`(相同去重規則),寫入文件後回傳,**不會回傳 404**。
+
 ---
 
 ### 5. 部署前台與後台(Hosting)
@@ -136,7 +138,7 @@ firebase deploy --only hosting
 
 ### 手動觸發第一次彙總
 
-Cloud Scheduler 首次執行要等到明天早上 10:00,如需立即測試彙總,可手動觸發:
+Cloud Scheduler 首次執行要等到明天早上 07:30,如需立即測試彙總,可手動觸發:
 
 #### 方法 1:在 Cloud Console 手動執行
 
@@ -300,10 +302,7 @@ curl -s "${ENDPOINT}?date=${YESTERDAY}&key=${API_KEY}" | jq .
 
 **原因**:該日期尚未彙總,或 `analytics_daily/{日期}` 文件不存在
 
-**解決**:
-1. 確認該日期有前台流量
-2. 手動觸發 `aggregateAnalytics`
-3. 或查詢前一天的日期
+**解決**:v2 已加入 fallback 機制,**不再回傳 404**。如文件不存在,會即時計算該日期的 `analytics_events`,寫入文件後回傳。如回傳空數據(0 views),表示該日期確實無事件。
 
 ### Q: Cloud Scheduler 沒有自動執行?
 

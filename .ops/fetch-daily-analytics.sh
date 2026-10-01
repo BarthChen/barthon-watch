@@ -1,6 +1,8 @@
 #!/bin/bash
 # BarthON 流量分析 ops bot 範例
-# 用途:每天早上抓取前一天的流量統計,生成簡易報告
+# 用途:每天早上 8:00 抓取前一天的流量統計,生成簡易報告
+# 排程:Cloud Scheduler 於 7:30 彙總完成,8:00 執行此腳本剛好可取得最新資料
+# Fallback:即使排程延遲或失敗,getDailySummary 會即時計算並回傳,不會 404
 
 set -e
 

@@ -17,8 +17,8 @@ export BARTHON_API_KEY="your-secret-key"
 ### Cron 設定範例
 
 ```cron
-# 每天早上 11:00 執行(Taipei 時間,Scheduler 10:00 彙總完成後)
-0 11 * * * export BARTHON_API_KEY="your-key" && /path/to/barthon-watch/.ops/fetch-daily-analytics.sh >> /var/log/barthon-daily.log 2>&1
+# 每天早上 8:00 執行(Taipei 時間,Scheduler 7:30 彙總完成後)
+0 8 * * * export BARTHON_API_KEY="your-key" && /path/to/barthon-watch/.ops/fetch-daily-analytics.sh >> /var/log/barthon-daily.log 2>&1
 ```
 
 ### 輸出範例

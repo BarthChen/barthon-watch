@@ -21,9 +21,9 @@ function toTaipeiDate(ts) {
          String(d.getUTCDate()).padStart(2, '0');
 }
 
-// 每天早上 2:00 (UTC-8=Taipei 10:00) 跑彙總,處理前一天的事件
+// 每天早上 7:30 (Taipei) 跑彙總,處理前一天的事件,確保 8:00 前完成供 bot 報告使用
 export const aggregateAnalytics = onSchedule({
-  schedule: 'every day 02:00',
+  schedule: 'every day 07:30',
   timeZone: 'Asia/Taipei',
   region: 'asia-east1',
   memory: '512MiB'
@@ -178,18 +178,146 @@ export const getDailySummary = onRequest({
 
   try {
     const docSnap = await db.collection('analytics_daily').doc(dateParam).get();
-    if (!docSnap.exists) {
-      return res.status(404).json({ error: `No data for date: ${dateParam}` });
+    
+    // 如果已有彙總文件,直接回傳
+    if (docSnap.exists) {
+      const data = docSnap.data();
+      return res.status(200).json({
+        date: data.date,
+        timezone: data.timezone,
+        uniqueVisitors: data.uniqueVisitors || 0,
+        pageViews: data.pageViews || 0,
+        uniquePageSessions: data.uniqueSessions || 0,
+        topProducts: (data.topProducts || []).map(p => ({
+          id: p.watchId,
+          brand: p.watchBrand,
+          model: p.watchModel,
+          slug: p.watchId,
+          uniqueVisitors: p.uniqueVisitors,
+          clicks: p.clicks
+        })),
+        topPages: (data.topPages || []).map(p => ({
+          path: p.path,
+          uniqueVisitors: p.uniqueVisitors,
+          views: p.views
+        })),
+        excluded: data.excluded || { bots: 0, duplicates: 0, other: 0 }
+      });
     }
 
-    const data = docSnap.data();
+    // Fallback:文件不存在(排程未跑或當天資料),即時計算
+    console.log(`[getDailySummary] No daily doc for ${dateParam}, computing on-the-fly...`);
+    
+    // 讀取該日期所有事件
+    const eventsSnap = await db.collection('analytics_events')
+      .orderBy('timestamp')
+      .get();
+
+    const events = [];
+    eventsSnap.forEach(doc => {
+      const ev = doc.data();
+      if (!ev.timestamp || !ev.visitorId) return;
+      const evDate = toTaipeiDate(ev.timestamp);
+      if (evDate === dateParam) {
+        events.push({ id: doc.id, ...ev });
+      }
+    });
+
+    if (!events.length) {
+      // 該日期確實無任何事件
+      return res.status(200).json({
+        date: dateParam,
+        timezone: 'Asia/Taipei',
+        uniqueVisitors: 0,
+        pageViews: 0,
+        uniquePageSessions: 0,
+        topProducts: [],
+        topPages: [],
+        excluded: { bots: 0, duplicates: 0, other: 0 }
+      });
+    }
+
+    // 去重邏輯(與 aggregateAnalytics 相同)
+    const deduped = [];
+    const seen = new Map();
+    events.sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis());
+    
+    for (const ev of events) {
+      const key = `${ev.type}|${ev.visitorId}|${ev.path || ''}|${ev.watchId || ''}`;
+      const last = seen.get(key);
+      if (last && (ev.timestamp.toMillis() - last) < 5000) {
+        continue;
+      }
+      seen.set(key, ev.timestamp.toMillis());
+      deduped.push(ev);
+    }
+
+    // 計算指標
+    const pageViews = deduped.filter(e => e.type === 'page_view').length;
+    const uniqueVisitors = new Set(deduped.map(e => e.visitorId)).size;
+    const uniqueSessions = new Set(deduped.map(e => e.sessionId)).size;
+
+    // Top Pages
+    const pathCounts = {};
+    deduped.filter(e => e.type === 'page_view').forEach(e => {
+      const p = e.path || '/';
+      pathCounts[p] = (pathCounts[p] || 0) + 1;
+    });
+    const topPages = Object.entries(pathCounts)
+      .map(([path, count]) => ({
+        path,
+        views: count,
+        uniqueVisitors: deduped.filter(e => e.type === 'page_view' && e.path === path)
+          .reduce((s, e) => (s.add(e.visitorId), s), new Set()).size
+      }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 20);
+
+    // Top Products
+    const productStats = {};
+    deduped.filter(e => e.type === 'product_click' && e.watchId).forEach(e => {
+      const id = e.watchId;
+      if (!productStats[id]) {
+        productStats[id] = { watchId: id, watchBrand: e.watchBrand || '', watchModel: e.watchModel || '', clicks: 0, uniqueVisitors: new Set() };
+      }
+      productStats[id].clicks += 1;
+      productStats[id].uniqueVisitors.add(e.visitorId);
+    });
+    const topProducts = Object.values(productStats)
+      .map(p => ({ ...p, uniqueVisitors: p.uniqueVisitors.size }))
+      .sort((a, b) => b.clicks - a.clicks)
+      .slice(0, 30);
+
+    // 過濾統計
+    const botCount = events.filter(e => {
+      const ua = (e.userAgent || '').toLowerCase();
+      return ['bot', 'crawler', 'spider'].some(p => ua.includes(p));
+    }).length;
+    const duplicateCount = events.length - deduped.length;
+
+    const summary = {
+      date: dateParam,
+      timezone: 'Asia/Taipei',
+      pageViews,
+      uniqueVisitors,
+      uniqueSessions,
+      topPages,
+      topProducts: topProducts.map(p => ({ watchId: p.watchId, watchBrand: p.watchBrand, watchModel: p.watchModel, clicks: p.clicks, uniqueVisitors: p.uniqueVisitors })),
+      excluded: { bots: botCount, duplicates: duplicateCount, other: 0 },
+      updatedAt: Timestamp.now()
+    };
+
+    // 寫入 analytics_daily(避免下次重複計算)
+    await db.collection('analytics_daily').doc(dateParam).set(summary);
+    console.log(`[getDailySummary] Computed and saved ${dateParam}: ${pageViews} views, ${uniqueVisitors} visitors`);
+
     return res.status(200).json({
-      date: data.date,
-      timezone: data.timezone,
-      uniqueVisitors: data.uniqueVisitors || 0,
-      pageViews: data.pageViews || 0,
-      uniquePageSessions: data.uniqueSessions || 0,
-      topProducts: (data.topProducts || []).map(p => ({
+      date: summary.date,
+      timezone: summary.timezone,
+      uniqueVisitors: summary.uniqueVisitors,
+      pageViews: summary.pageViews,
+      uniquePageSessions: summary.uniqueSessions,
+      topProducts: summary.topProducts.map(p => ({
         id: p.watchId,
         brand: p.watchBrand,
         model: p.watchModel,
@@ -197,12 +325,12 @@ export const getDailySummary = onRequest({
         uniqueVisitors: p.uniqueVisitors,
         clicks: p.clicks
       })),
-      topPages: (data.topPages || []).map(p => ({
+      topPages: summary.topPages.map(p => ({
         path: p.path,
         uniqueVisitors: p.uniqueVisitors,
         views: p.views
       })),
-      excluded: data.excluded || { bots: 0, duplicates: 0, other: 0 }
+      excluded: summary.excluded
     });
   } catch (err) {
     console.error('[getDailySummary] Error:', err);

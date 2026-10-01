@@ -69,13 +69,14 @@
 
 ### 4. 每日彙總 (`functions/index.js`)
 #### `aggregateAnalytics` (Cloud Scheduler)
-- **觸發**:每天早上 10:00 (Taipei 時間)
+- **觸發**:每天早上 07:30 (Taipei 時間)
 - **處理**:讀取前一天(Taipei 日期)的所有 `analytics_events`,去重、聚合,寫入 `analytics_daily/{日期}`
 - **部署**:`firebase deploy --only functions:aggregateAnalytics`
 
 #### `getDailySummary` (HTTP Function)
 - **端點**:`https://asia-east1-barthon-watch.cloudfunctions.net/getDailySummary?date=YYYY-MM-DD`
 - **認證**:查詢參數 `?key=<API_KEY>` 或 header `X-API-Key: <key>`(透過 Firebase secret `API_KEY` 注入)
+- **Fallback**:如 `analytics_daily/{日期}` 不存在,即時計算該日期的 `analytics_events`(相同去重規則),寫入文件後回傳
 - **回應 JSON**:
 ```json
 {
@@ -146,10 +147,10 @@ firebase deploy --only functions
 ## 常見問題
 
 ### Q: 為什麼要分 `analytics_events` 與 `analytics_daily`?
-A: 原始事件保留完整記錄供日後稽核/重算;每日彙總減少前台讀取開銷,儀表板直接讀已去重的乾淨數據。
+A: 原始事件保留完整記錄供日後稽核/重算;每日彙總減少前台讀取開銷,儀表板直接讀已去重的乾淨數據。排程每天 07:30 執行,確保 08:00 前完成供 bot 報告使用。
 
 ### Q: 如何查看即時(未彙總)的今日數據?
-A: 後台目前只顯示已彙總的 `analytics_daily`;如需即時數據,可在 Firebase Console → Firestore → `analytics_events` 手動查詢或寫額外的即時聚合邏輯。
+A: `getDailySummary` API 已內建 fallback:如 `analytics_daily` 文件不存在,會即時計算 `analytics_events`(相同去重規則),寫入文件後回傳。後台儀表板目前只顯示已彙總的數據。
 
 ### Q: `aggregateAnalytics` 跑失敗怎麼辦?
 A: 檢查 Firebase Console → Functions 的 logs;常見原因:

@@ -41,7 +41,7 @@
 - ✅ 建立 `functions/package.json`(Node 20, firebase-admin, firebase-functions)
 - ✅ 建立 `functions/index.js`(ES module)
   - **aggregateAnalytics**(Cloud Scheduler):
-    - 每天早上 10:00 (Taipei) 自動執行
+    - 每天早上 7:30 (Taipei) 自動執行,確保 8:00 前完成供 bot 報告使用
     - 讀取前一天所有 analytics_events
     - 去重:相同 visitor × type × path × watchId 在 5 秒內只算一次
     - 聚合:pageViews, uniqueVisitors, uniqueSessions
@@ -51,13 +51,14 @@
   - **getDailySummary**(HTTP endpoint):
     - GET /getDailySummary?date=YYYY-MM-DD&key=<API_KEY>
     - 認證:環境變數 API_KEY(透過 Firebase secret 注入)
+    - **Fallback 機制**:如 `analytics_daily/{日期}` 不存在,即時計算該日期的 `analytics_events`(相同去重規則),寫入文件後回傳,**不會回傳 404**
     - 回傳 JSON:所有去重指標 + 排行榜
     - CORS 啟用
 - ✅ 部署配置:asia-east1 region, 512MiB memory
 
 ### 5. ops Bot 工具
 - ✅ 建立 `.ops/fetch-daily-analytics.sh`
-  - 每天早上抓取前一天統計
+  - 每天早上 8:00 抓取前一天統計(Scheduler 7:30 彙總完成後)
   - 解析 JSON,生成格式化日報
   - 支援環境變數 BARTHON_API_KEY 認證
   - 註解範例:Slack webhook / 寫日誌檔
