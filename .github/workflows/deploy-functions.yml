@@ -1,12 +1,12 @@
-name: Deploy Functions
-# 先設成「手動觸發」:等 Blaze + LINE 金鑰(Secret)+ IAM 權限都設好後,
-# 到 GitHub → Actions → Deploy Functions → Run workflow 觸發,即可部署。
-# 之後一切就緒、要改成 push 自動部署,把下面的 push 段落取消註解即可。
+name: 🔥 Deploy Cloud Functions
+
+# 自動部署:push 到 main 且 functions/** 或 firebase.json 有變動時觸發。
+# 也保留手動觸發功能(workflow_dispatch)。
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [main]
-  #   paths: ['functions/**', 'firebase.json']
+  push:
+    branches: [main]
+    paths: ['functions/**', 'firebase.json']
 jobs:
   functions:
     runs-on: ubuntu-latest
