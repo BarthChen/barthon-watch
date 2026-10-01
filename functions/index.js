@@ -1,7 +1,7 @@
 // BarthON 流量分析 - Cloud Functions
 // 1) aggregateAnalytics — 每日定時彙總前一天的事件到 analytics_daily
 // 2) getDailySummary — HTTP endpoint 給 ops bot 抓取指定日期的統計摘要(JSON)
-// (IAM 權限已授予,觸發重新部署)
+// (所有必要 APIs 已啟用:Functions, Build, Artifact Registry, Extensions)
 
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onRequest } from 'firebase-functions/v2/https';
