@@ -217,6 +217,26 @@ onAuthStateChanged(auth, user => {
             </div>
           </div>
 
+          <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;margin-bottom:24px">
+            <div style="padding:18px 22px;border-bottom:1px solid rgba(255,255,255,.06)">
+              <h3 style="font-size:15px;font-weight:500;color:#ececee">熱門頁面</h3>
+              <p style="font-size:12px;color:#7c7c84;margin-top:3px">最多人瀏覽的頁面路徑（累計）</p>
+            </div>
+            <sc-if value="{{ pageRankEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:34px 22px;text-align:center;color:#7c7c84;font-size:14px">尚無頁面瀏覽資料。</div>
+            </sc-if>
+            <sc-for list="{{ pageRank }}" as="p" hint-placeholder-count="0">
+              <div style="padding:12px 22px;border-bottom:1px solid rgba(255,255,255,.05)">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <span style="width:24px;font-family:'Cormorant Garamond',serif;font-size:18px;color:#7c84c8;flex:none">{{ p.rank }}</span>
+                  <div style="flex:1;min-width:0;font-size:13px;color:#ececee;font-family:monospace">{{ p.path }}</div>
+                  <div style="flex:none;font-size:13px;color:#a0a8d8">{{ p.views }} 次</div>
+                </div>
+                <div style="{{ p.barStyle }}"></div>
+              </div>
+            </sc-for>
+          </div>
+
           <div style="background:#16171a;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden">
             <div style="padding:18px 22px;border-bottom:1px solid rgba(255,255,255,.06)">
               <h3 style="font-size:15px;font-weight:500;color:#ececee">腕錶點擊排行</h3>
@@ -833,7 +853,16 @@ class Component extends DCLogic {
       rank:i+1, name:nameOf(r.id), count:r.count,
       barStyle:{width:Math.round(r.count/maxC*100)+"%",height:"7px",borderRadius:"4px",background:"#c8a667",marginTop:"6px"}
     }));
-    return { statCards2, statDaily, watchRank, watchRankEmpty:watchRank.length===0,
+    // 熱門頁面(topPages 聚合,取前 10)
+    const pageTotals={};
+    daily.forEach(r=>{ const tp=r.topPages||[]; tp.forEach(p=>{ const path=p.path; pageTotals[path]=(pageTotals[path]||0)+(p.views||0); }); });
+    const topPages=Object.entries(pageTotals).map(([path,views])=>({path,views})).sort((a,b)=>b.views-a.views).slice(0,10);
+    const maxP=Math.max(1,...topPages.map(p=>p.views));
+    const pageRank=topPages.map((p,i)=>({
+      rank:i+1, path:p.path, views:p.views,
+      barStyle:{width:Math.round(p.views/maxP*100)+"%",height:"6px",borderRadius:"4px",background:"#7c84c8",marginTop:"5px"}
+    }));
+    return { statCards2, statDaily, watchRank, watchRankEmpty:watchRank.length===0, pageRank, pageRankEmpty:pageRank.length===0,
              statHasData:daily.length>0, statDays:days.length };
   }
 
