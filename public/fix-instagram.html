@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>修正 Instagram 連結 - BarthON 後台工具</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+    background: #0d0e10;
+    color: #ececee;
+    padding: 40px 20px;
+    line-height: 1.6;
+  }
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: #17181b;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px;
+    padding: 40px;
+  }
+  h1 {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: #c8a667;
+  }
+  .subtitle {
+    color: #7c7c84;
+    font-size: 14px;
+    margin-bottom: 32px;
+  }
+  .field {
+    margin-bottom: 24px;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #7c7c84;
+    margin-bottom: 8px;
+  }
+  input {
+    width: 100%;
+    background: #0d0e10;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px;
+    color: #ececee;
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: inherit;
+  }
+  input:focus {
+    outline: none;
+    border-color: #c8a667;
+  }
+  button {
+    width: 100%;
+    background: #c8a667;
+    color: #0d0e10;
+    border: 0;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+    font-family: inherit;
+  }
+  button:hover {
+    background: #b8965a;
+  }
+  button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+  .status {
+    margin-top: 20px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: none;
+  }
+  .status.success {
+    background: rgba(91, 191, 138, .15);
+    border: 1px solid rgba(91, 191, 138, .3);
+    color: #5bbf8a;
+    display: block;
+  }
+  .status.error {
+    background: rgba(224, 102, 77, .15);
+    border: 1px solid rgba(224, 102, 77, .3);
+    color: #e0664d;
+    display: block;
+  }
+  .status.info {
+    background: rgba(200, 166, 103, .15);
+    border: 1px solid rgba(200, 166, 103, .3);
+    color: #c8a667;
+    display: block;
+  }
+  .info-box {
+    background: rgba(200, 166, 103, .08);
+    border: 1px solid rgba(200, 166, 103, .2);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    color: #ababae;
+  }
+  .info-box strong {
+    color: #c8a667;
+  }
+  code {
+    background: #0d0e10;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 13px;
+  }
+  .back-link {
+    text-align: center;
+    margin-top: 24px;
+  }
+  .back-link a {
+    color: #7c7c84;
+    text-decoration: none;
+    font-size: 13px;
+    transition: color .2s;
+  }
+  .back-link a:hover {
+    color: #c8a667;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>修正 Instagram 連結</h1>
+  <p class="subtitle">更新 Firestore site/copy 文件中的 Instagram URL</p>
+
+  <div class="info-box">
+    <strong>目的：</strong>將網站所有 Instagram 連結更新為正確的帳號<br>
+    <strong>正確 URL：</strong><code>https://www.instagram.com/barthonwatch/</code><br>
+    <strong>影響範圍：</strong>前台首頁、導覽列、聯絡區、頁尾的所有 Instagram 連結
+  </div>
+
+  <form id="fixForm">
+    <div class="field">
+      <label>目前的 Instagram URL</label>
+      <input type="text" id="currentUrl" readonly placeholder="載入中...">
+    </div>
+
+    <div class="field">
+      <label>新的 Instagram URL</label>
+      <input type="url" id="newUrl" value="https://www.instagram.com/barthonwatch/" required>
+    </div>
+
+    <button type="submit" id="submitBtn">更新 Instagram 連結</button>
+  </form>
+
+  <div class="status" id="status"></div>
+
+  <div class="back-link">
+    <a href="/console">← 返回後台管理</a>
+  </div>
+</div>
+
+<script type="module">
+  import { firebaseConfig } from './firebase-config.js';
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js';
+  import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js';
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app, 'barthon');
+
+  const currentUrlInput = document.getElementById('currentUrl');
+  const newUrlInput = document.getElementById('newUrl');
+  const statusDiv = document.getElementById('status');
+  const submitBtn = document.getElementById('submitBtn');
+  const form = document.getElementById('fixForm');
+
+  function showStatus(message, type) {
+    statusDiv.textContent = message;
+    statusDiv.className = `status ${type}`;
+  }
+
+  async function loadCurrentUrl() {
+    try {
+      const copyDocRef = doc(db, 'site', 'copy');
+      const docSnap = await getDoc(copyDocRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        currentUrlInput.value = data.igUrl || '(未設定)';
+        
+        if (data.igUrl === newUrlInput.value) {
+          showStatus('✅ Instagram 連結已經是正確的,無需修改', 'info');
+        }
+      } else {
+        currentUrlInput.value = '(文件不存在)';
+        showStatus('⚠️ site/copy 文件不存在,提交後將建立新文件', 'info');
+      }
+    } catch (error) {
+      console.error('載入失敗:', error);
+      currentUrlInput.value = '(載入失敗)';
+      showStatus('❌ 載入失敗: ' + error.message, 'error');
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const newUrl = newUrlInput.value.trim();
+    if (!newUrl) {
+      showStatus('❌ 請輸入有效的 URL', 'error');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = '更新中...';
+    showStatus('⏳ 正在更新 Firestore...', 'info');
+
+    try {
+      const copyDocRef = doc(db, 'site', 'copy');
+      const docSnap = await getDoc(copyDocRef);
+      
+      let updateData;
+      if (docSnap.exists()) {
+        // Update existing document
+        updateData = {
+          ...docSnap.data(),
+          igUrl: newUrl
+        };
+      } else {
+        // Create new document with defaults
+        updateData = {
+          heroImg: "",
+          aboutImg: "",
+          heroTitle: "一個愛錶的人 分享自己的收藏",
+          heroLead: "海外收藏而來的腕錶,運動款到正裝款、現代到古董都有,多數是親自入手實戴,偶爾也有配錶配到的全新品項與可預購錶款。現貨實拍、來源清楚,台灣本島歡迎面交驗錶,買得安心、戴得放心。",
+          aboutText: "BarthON 不是店面,主要是我這幾年慢慢收藏下來的一些錶,大多入手前做過功課、也實際戴過一段時間,現在因為錶款汰換,想讓它們找到下一個真正喜歡的主人。偶爾也會有配錶配到的全新品項,或是可預購的錶款,都會在頁面上清楚標明狀態。",
+          lineId: "@399pscpi",
+          phone: "0912-345-678",
+          fbUrl: "https://facebook.com/barthon",
+          igUrl: newUrl
+        };
+      }
+
+      await setDoc(copyDocRef, updateData);
+      
+      currentUrlInput.value = newUrl;
+      showStatus('✅ Instagram 連結已成功更新！重新整理前台首頁即可看到變更。', 'success');
+      
+    } catch (error) {
+      console.error('更新失敗:', error);
+      showStatus('❌ 更新失敗: ' + error.message, 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '更新 Instagram 連結';
+    }
+  });
+
+  // Load current URL on page load
+  loadCurrentUrl();
+</script>
+
+</body>
+</html>
