@@ -935,10 +935,13 @@
     const shareUrl = location.origin + location.pathname + "#w" + id;
     const shareText = `${w.brand} ${w.name}｜BarthON 精選腕錶`;
     const detailBadges=[...(w.badges||[]),...(w.badge?[w.badge]:[])];
+    // 配件 Set:優先用 set 物件計算(與卡片邏輯一致),向後相容 accessories 文字欄位
+    const accSet = ()=>{ const s=w.set||{}; if(s.box&&s.card&&s.manual&&s.strap) return "全套"; const parts=[]; if(s.box)parts.push("原廠盒"); if(s.card)parts.push("保證卡"); if(s.manual)parts.push("說明書"); if(s.strap)parts.push("多餘錶帶"); return parts.length?parts.join("、"):""; };
+    const accText = accSet() || w.accessories || "";
     const specs = [
       ["型號 Ref.", w.ref],["年份 Year", w.year],["機芯 Movement", w.movement],
       ["錶徑 Size", w.size],["材質 Case", w.material],["防水 W.R.", w.water],
-      ["類型 Type", w.cat],["配件 Set", w.accessories],
+      ["類型 Type", w.cat],["配件 Set", accText],
       ["保固 Warranty", w.warranty],["來源 Origin", w.origin],
     ];
     detailInner.innerHTML = `
