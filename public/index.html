@@ -332,7 +332,7 @@
   .detail-inner{display:grid;grid-template-columns:1fr 1fr}
   .d-media{padding:30px;border-right:1px solid var(--line);background:var(--bg)}
   .d-media .g-main{width:100%;height:380px;border:1px solid var(--line-strong);margin-bottom:14px}
-  .g-thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .g-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
   .g-thumbs .photo{width:100%;height:84px;border:1px solid var(--line)}
   .d-info{padding:48px 44px 44px;display:flex;flex-direction:column}
   .d-info .card-brand{margin-bottom:9px}
@@ -340,7 +340,7 @@
   .d-price{font-family:var(--serif-en);font-size:30px;color:#b8965a;margin-bottom:16px}
   .d-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
   .d-badge{font-size:11.5px;letter-spacing:.08em;color:#b8965a;border:1px solid var(--gold-dim);padding:5px 11px}
-  .d-desc{font-size:15px;color:var(--ink-soft);font-weight:300;line-height:1.75;margin-bottom:26px}
+  .d-desc{font-size:15px;color:var(--ink-soft);font-weight:300;line-height:1.75;margin-bottom:26px;white-space:pre-line}
   .specs{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--line);margin-bottom:30px}
   .specs .row{display:flex;flex-direction:column;gap:3px;padding:14px 0;border-bottom:1px solid var(--line)}
   .specs .row:nth-child(odd){padding-right:18px}
@@ -727,7 +727,7 @@
           const cond=w.condition==="全新"?"全新":((set.box&&set.card)?((w.pct||"")+"・全套"):(w.pct||""));
           const meta=[w.year,cond].filter(Boolean).join("・")||"現貨";
           const saleState = w.saleState || (w.sold?"sold":"sale");
-          WATCHES.push({id:w.id,brand:w.brand,name:w.name,cat:w.cat,badge:w.badge||"",badges:Array.isArray(w.badges)?w.badges:[],price:w.price,meta,condition:w.condition,ref:w.ref,year:w.year,movement:w.movement,size:w.size,material:w.material,water:w.water,accessories:w.accessories,warranty:w.warranty,origin:w.origin,desc:w.desc,imgs:w.images||[],saleState,sold:saleState==="sold",soldAt:w.soldAt||0});
+          WATCHES.push({id:w.id,brand:w.brand,name:w.name,cat:w.cat,badge:w.badge||"",badges:Array.isArray(w.badges)?w.badges:[],price:w.price,meta,condition:w.condition,ref:w.ref,year:w.year,movement:w.movement,size:w.size,material:w.material,water:w.water,set:set,accessories:w.accessories,warranty:w.warranty,origin:w.origin,desc:w.desc,imgs:w.images||[],saleState,sold:saleState==="sold",soldAt:w.soldAt||0});
         });
       }
       if(cSnap.exists()) _applyCopy(cSnap.data());
@@ -811,7 +811,7 @@
   }
   // 後台上傳的圖片(data URL)
   function photoURL(url, cls, ph){
-    if(url) return `<div class="photo${cls?' '+cls:''}"><img src="${url}" alt="${ph}" loading="lazy"></div>`;
+    if(url) return `<div class="photo${cls?' '+cls:''}"><img src="${url}" alt="${ph}" loading="lazy" decoding="async"></div>`;
     return `<div class="photo empty${cls?' '+cls:''}" data-ph="${ph}"></div>`;
   }
 
@@ -948,7 +948,7 @@
       <div class="d-media">
         ${photoURL((w.imgs&&w.imgs[0])||"", "g-main", "主照片")}
         <div class="g-thumbs">
-          ${(w.imgs&&w.imgs.length?w.imgs.slice(0,4):[null,null,null,null]).map((u,i)=>photoURL(u,"",`照片 ${i+1}`)).join("")}
+          ${(w.imgs||[]).map((u,i)=>photoURL(u,"",`照片 ${i+1}`)).join("")}
         </div>
       </div>
       <div class="d-info">
