@@ -882,9 +882,14 @@
         if(pa==null&&pb==null){} else if(pa==null) return 1; else if(pb==null) return -1;
         else return activeSort==="價格低→高" ? pa-pb : pb-pa;
       }
-      // 預設:已收訂/已售出區依狀態變更先後,在售區維持原順序
+      // 預設:已收訂/已售出區依狀態變更先後,在售區依上架時間新→舊(從 ID 提取時間戳記)
       if(as>0&&bs>0) return (a.soldAt||0)-(b.soldAt||0);
-      return 0;
+      // 在售區:從 ID 提取時間戳記(格式 w + 毫秒數),最新的排最前
+      const getTimestamp = (w) => {
+        const match = (w.id||"").match(/^w+(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      };
+      return getTimestamp(b) - getTimestamp(a);
     });
     if(resultCount) resultCount.textContent = "共 " + list.length + " 支";
     if(!list.length){
