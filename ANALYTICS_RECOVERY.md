@@ -37,12 +37,12 @@ catch (err) {
 timestamp: this.fs.serverTimestamp()  // 伺服器自動填入,完全避免時鐘偏移
 ```
 
-### 2. 安全規則容許 `null`
+### 2. 安全規則驗證 `request.time`
 ```javascript
-&& (data.timestamp == null || data.timestamp is timestamp)
+&& data.timestamp == request.time  // serverTimestamp() 在規則中解析為 request.time
 ```
-- `serverTimestamp()` 寫入時為 `null` placeholder
-- Firestore 自動替換成伺服器時間
+- `serverTimestamp()` 在客戶端是 sentinel 值,在安全規則中解析為 `request.time`
+- 強制要求使用伺服器時間,拒絕客戶端自訂時間戳記
 
 ### 3. 批次失敗重試一次
 ```javascript
