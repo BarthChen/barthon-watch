@@ -18,12 +18,15 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v2
         with:
-          service_account_key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           project_id: barthon-watch
-          export_default_credentials: true
 
       - name: Install firebase-admin
         run: npm install firebase-admin
@@ -46,6 +49,36 @@ jobs:
           
           async function countEvents() {
             try {
+              const eventsRef = db.collection('analytics_events');
+              
+              // 先取得整個集合的總數量(使用 count aggregation)
+              console.log('=== Total Collection Stats ===');
+              const countSnapshot = await eventsRef.count().get();
+              console.log(`Total documents in analytics_events: ${countSnapshot.data().count}`);
+              
+              // 取得最新 3 筆事件的 timestamp
+              console.log('\nNewest 3 event timestamps:');
+              const newestEvents = await eventsRef
+                .orderBy('timestamp', 'desc')
+                .limit(3)
+                .get();
+              
+              if (newestEvents.empty) {
+                console.log('  No events with timestamp field found');
+              } else {
+                newestEvents.forEach((doc, idx) => {
+                  const data = doc.data();
+                  const ts = data.timestamp;
+                  if (ts && ts.toDate) {
+                    console.log(`  ${idx + 1}. ${ts.toDate().toISOString()}`);
+                  } else if (ts) {
+                    console.log(`  ${idx + 1}. ${ts}`);
+                  } else {
+                    console.log(`  ${idx + 1}. (no timestamp)`);
+                  }
+                });
+              }
+              
               // 2026-10-20 00:00:00 到 23:59:59 (Taipei UTC+8)
               // UTC: 2026-10-19 16:00:00 到 2026-10-20 15:59:59
               const day20Start = new Date('2026-10-19T16:00:00Z');
@@ -56,45 +89,49 @@ jobs:
               const day21Start = new Date('2026-10-20T16:00:00Z');
               const day21End = new Date('2026-10-21T15:59:59.999Z');
               
-              console.log('=== 2026-10-20 (Taipei UTC+8) ===');
-              const snapshot20 = await db.collection('analytics_events')
+              console.log('\n=== 2026-10-20 (Taipei UTC+8) ===');
+              const snapshot20 = await eventsRef
                 .where('timestamp', '>=', day20Start)
                 .where('timestamp', '<=', day20End)
                 .get();
               
               console.log(`Total events: ${snapshot20.size}`);
               
-              // 按 type 分組統計
-              const typeCount20 = {};
-              snapshot20.forEach(doc => {
-                const type = doc.data().type || 'unknown';
-                typeCount20[type] = (typeCount20[type] || 0) + 1;
-              });
-              
-              console.log('Breakdown by type:');
-              Object.entries(typeCount20).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
-                console.log(`  ${type}: ${count}`);
-              });
+              if (snapshot20.size > 0) {
+                // 按 type 分組統計
+                const typeCount20 = {};
+                snapshot20.forEach(doc => {
+                  const type = doc.data().type || 'unknown';
+                  typeCount20[type] = (typeCount20[type] || 0) + 1;
+                });
+                
+                console.log('Breakdown by type:');
+                Object.entries(typeCount20).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+                  console.log(`  ${type}: ${count}`);
+                });
+              }
               
               console.log('\n=== 2026-10-21 (Taipei UTC+8) ===');
-              const snapshot21 = await db.collection('analytics_events')
+              const snapshot21 = await eventsRef
                 .where('timestamp', '>=', day21Start)
                 .where('timestamp', '<=', day21End)
                 .get();
               
               console.log(`Total events: ${snapshot21.size}`);
               
-              // 按 type 分組統計
-              const typeCount21 = {};
-              snapshot21.forEach(doc => {
-                const type = doc.data().type || 'unknown';
-                typeCount21[type] = (typeCount21[type] || 0) + 1;
-              });
-              
-              console.log('Breakdown by type:');
-              Object.entries(typeCount21).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
-                console.log(`  ${type}: ${count}`);
-              });
+              if (snapshot21.size > 0) {
+                // 按 type 分組統計
+                const typeCount21 = {};
+                snapshot21.forEach(doc => {
+                  const type = doc.data().type || 'unknown';
+                  typeCount21[type] = (typeCount21[type] || 0) + 1;
+                });
+                
+                console.log('Breakdown by type:');
+                Object.entries(typeCount21).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+                  console.log(`  ${type}: ${count}`);
+                });
+              }
               
               process.exit(0);
             } catch (error) {
@@ -201,15 +238,8 @@ jobs:
         run: |
           echo "=== Cloud Functions logs between 2026-10-21T23:00:00Z and 2026-10-22T00:30:00Z ==="
           gcloud logging read \
-            'resource.type="cloud_function" AND timestamp>="2026-10-21T23:00:00Z" AND timestamp<="2026-10-22T00:30:00Z"' \
+            '(resource.type="cloud_function" OR resource.type="cloud_run_revision") AND timestamp>="2026-10-21T23:00:00Z" AND timestamp<="2026-10-22T00:30:00Z"' \
             --limit=200 \
             --format=json \
             --project=barthon-watch \
-            2>&1 || {
-              EXIT_CODE=$?
-              echo "⚠️  gcloud logging read failed with exit code $EXIT_CODE"
-              echo "Required IAM role: roles/logging.viewer or roles/logging.admin"
-              exit 0
-            }
-        env:
-          CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+            2>&1 || echo "⚠️  gcloud logging read failed. Required IAM role: roles/logging.viewer or roles/logging.admin"
