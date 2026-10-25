@@ -11,6 +11,7 @@ export class Analytics {
     this.lastEventTime = 0;
     this.eventQueue = [];
     this.flushTimer = null;
+    this.retriedEvents = new WeakSet();  // 追蹤已重試的事件,不污染事件物件
   }
 
   // 持久化訪客 ID (localStorage),一個裝置 = 一個訪客
@@ -87,8 +88,9 @@ export class Analytics {
     } catch (err) {
       console.error('[Analytics] flush failed:', err);
       // 失敗的事件放回佇列頭部,稍後重試(最多重試一次,避免無限迴圈)
-      if (!batch[0]._retried) {
-        batch.forEach(ev => { ev._retried = true; });
+      // 用 WeakSet 追蹤重試狀態,不污染事件物件(避免 hasOnly() 拒絕額外欄位)
+      if (!this.retriedEvents.has(batch[0])) {
+        batch.forEach(ev => this.retriedEvents.add(ev));
         this.eventQueue.unshift(...batch);
         // 5 秒後重試
         clearTimeout(this.flushTimer);
