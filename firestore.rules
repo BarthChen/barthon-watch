@@ -56,14 +56,13 @@ service cloud.firestore {
     }
 
     // 流量分析事件：訪客可建立(create only,不可讀取別人的),管理員可讀取所有
-    // 欄位驗證:type 限定值、timestamp 必須是近期時間、visitorId 必填
+    // 欄位驗證:type 限定值、timestamp 必須等於 request.time (serverTimestamp() 在規則中解析為此值)、visitorId 必填
     function analyticsEventValid() {
       let data = request.resource.data;
       return data.keys().hasOnly(['type','visitorId','sessionId','timestamp','path','referrer','watchId','watchBrand','watchModel','userAgent','screen'])
              && data.type in ['page_view', 'product_view', 'product_click']
              && data.visitorId is string && data.visitorId.size() > 0 && data.visitorId.size() < 100
-             && data.timestamp is timestamp
-             && (request.time - data.timestamp < duration.value(120, 's'))  // 事件不能比現在早超過 2 分鐘
+             && data.timestamp == request.time  // serverTimestamp() 在安全規則中解析為 request.time
              && (!('path' in data) || (data.path is string && data.path.size() < 300))
              && (!('watchId' in data) || (data.watchId is string && data.watchId.size() < 100));
     }

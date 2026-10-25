@@ -11,6 +11,7 @@ export class Analytics {
     this.lastEventTime = 0;
     this.eventQueue = [];
     this.flushTimer = null;
+    this.retriedEvents = new WeakSet();  // 追蹤已重試的事件,不污染事件物件
   }
 
   // 持久化訪客 ID (localStorage),一個裝置 = 一個訪客
@@ -85,7 +86,16 @@ export class Analytics {
     try {
       await Promise.all(batch.map(ev => this.fs.addDoc(this.fs.collection(this.db, 'analytics_events'), ev)));
     } catch (err) {
-      console.warn('[Analytics] flush failed:', err);
+      console.error('[Analytics] flush failed:', err);
+      // 失敗的事件放回佇列頭部,稍後重試(最多重試一次,避免無限迴圈)
+      // 用 WeakSet 追蹤重試狀態,不污染事件物件(避免 hasOnly() 拒絕額外欄位)
+      if (!this.retriedEvents.has(batch[0])) {
+        batch.forEach(ev => this.retriedEvents.add(ev));
+        this.eventQueue.unshift(...batch);
+        // 5 秒後重試
+        clearTimeout(this.flushTimer);
+        this.flushTimer = setTimeout(() => this._flush(), 5000);
+      }
     }
   }
 
@@ -98,7 +108,7 @@ export class Analytics {
       type: 'page_view',
       visitorId: this.visitorId,
       sessionId: this.sessionId,
-      timestamp: this.fs.Timestamp.now(),
+      timestamp: this.fs.serverTimestamp(),  // 使用伺服器時間,避免時鐘偏移問題
       path: path || location.pathname,
       referrer: document.referrer || '',
       userAgent: navigator.userAgent.slice(0, 200),
@@ -116,7 +126,7 @@ export class Analytics {
       type: 'product_view',
       visitorId: this.visitorId,
       sessionId: this.sessionId,
-      timestamp: this.fs.Timestamp.now(),
+      timestamp: this.fs.serverTimestamp(),
       path: location.pathname,
       watchId: watchId || '',
       watchBrand: watchBrand || '',
@@ -135,7 +145,7 @@ export class Analytics {
       type: 'product_click',
       visitorId: this.visitorId,
       sessionId: this.sessionId,
-      timestamp: this.fs.Timestamp.now(),
+      timestamp: this.fs.serverTimestamp(),
       path: location.pathname,
       watchId: watchId || '',
       watchBrand: watchBrand || '',
