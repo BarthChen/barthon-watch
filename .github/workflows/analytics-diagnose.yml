@@ -31,7 +31,7 @@ jobs:
       - name: Install firebase-admin
         run: npm install firebase-admin
 
-      - name: Count analytics_events for 2026-10-20 and 2026-10-21 (Taipei UTC+8)
+      - name: Count analytics_events for 2026-10-22 through 2026-10-26 (Taipei UTC+8)
         run: |
           cat > count-events.js << 'EOF'
           const admin = require('firebase-admin');
@@ -56,11 +56,11 @@ jobs:
               const countSnapshot = await eventsRef.count().get();
               console.log(`Total documents in analytics_events: ${countSnapshot.data().count}`);
               
-              // 取得最新 3 筆事件的 timestamp
-              console.log('\nNewest 3 event timestamps:');
+              // 取得最新 10 筆事件的 timestamp
+              console.log('\n=== Newest 10 event timestamps ===');
               const newestEvents = await eventsRef
                 .orderBy('timestamp', 'desc')
-                .limit(3)
+                .limit(10)
                 .get();
               
               if (newestEvents.empty) {
@@ -79,58 +79,46 @@ jobs:
                 });
               }
               
-              // 2026-10-20 00:00:00 到 23:59:59 (Taipei UTC+8)
-              // UTC: 2026-10-19 16:00:00 到 2026-10-20 15:59:59
-              const day20Start = new Date('2026-10-19T16:00:00Z');
-              const day20End = new Date('2026-10-20T15:59:59.999Z');
-              
-              // 2026-10-21 00:00:00 到 23:59:59 (Taipei UTC+8)
-              // UTC: 2026-10-20 16:00:00 到 2026-10-21 15:59:59
-              const day21Start = new Date('2026-10-20T16:00:00Z');
-              const day21End = new Date('2026-10-21T15:59:59.999Z');
-              
-              console.log('\n=== 2026-10-20 (Taipei UTC+8) ===');
-              const snapshot20 = await eventsRef
-                .where('timestamp', '>=', day20Start)
-                .where('timestamp', '<=', day20End)
+              // 計算 PR #17 部署後的事件數量 (2026-10-25T09:41:00Z 之後)
+              console.log('\n=== Events after PR #17 deploy (2026-10-25T09:41:00Z) ===');
+              const pr17Timestamp = new Date('2026-10-25T09:41:00Z');
+              const afterPR17 = await eventsRef
+                .where('timestamp', '>', pr17Timestamp)
+                .count()
                 .get();
+              console.log(`Total events after 2026-10-25T09:41:00Z: ${afterPR17.data().count}`);
               
-              console.log(`Total events: ${snapshot20.size}`);
+              // 定義 Taipei UTC+8 日期範圍 (2026-10-22 至 2026-10-26)
+              const days = [
+                { name: '2026-10-22', start: new Date('2026-10-21T16:00:00Z'), end: new Date('2026-10-22T15:59:59.999Z') },
+                { name: '2026-10-23', start: new Date('2026-10-22T16:00:00Z'), end: new Date('2026-10-23T15:59:59.999Z') },
+                { name: '2026-10-24', start: new Date('2026-10-23T16:00:00Z'), end: new Date('2026-10-24T15:59:59.999Z') },
+                { name: '2026-10-25', start: new Date('2026-10-24T16:00:00Z'), end: new Date('2026-10-25T15:59:59.999Z') },
+                { name: '2026-10-26', start: new Date('2026-10-25T16:00:00Z'), end: new Date('2026-10-26T15:59:59.999Z') }
+              ];
               
-              if (snapshot20.size > 0) {
-                // 按 type 分組統計
-                const typeCount20 = {};
-                snapshot20.forEach(doc => {
-                  const type = doc.data().type || 'unknown';
-                  typeCount20[type] = (typeCount20[type] || 0) + 1;
-                });
+              for (const day of days) {
+                console.log(`\n=== ${day.name} (Taipei UTC+8) ===`);
+                const snapshot = await eventsRef
+                  .where('timestamp', '>=', day.start)
+                  .where('timestamp', '<=', day.end)
+                  .get();
                 
-                console.log('Breakdown by type:');
-                Object.entries(typeCount20).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
-                  console.log(`  ${type}: ${count}`);
-                });
-              }
-              
-              console.log('\n=== 2026-10-21 (Taipei UTC+8) ===');
-              const snapshot21 = await eventsRef
-                .where('timestamp', '>=', day21Start)
-                .where('timestamp', '<=', day21End)
-                .get();
-              
-              console.log(`Total events: ${snapshot21.size}`);
-              
-              if (snapshot21.size > 0) {
-                // 按 type 分組統計
-                const typeCount21 = {};
-                snapshot21.forEach(doc => {
-                  const type = doc.data().type || 'unknown';
-                  typeCount21[type] = (typeCount21[type] || 0) + 1;
-                });
+                console.log(`Total events: ${snapshot.size}`);
                 
-                console.log('Breakdown by type:');
-                Object.entries(typeCount21).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
-                  console.log(`  ${type}: ${count}`);
-                });
+                if (snapshot.size > 0) {
+                  // 按 type 分組統計
+                  const typeCount = {};
+                  snapshot.forEach(doc => {
+                    const type = doc.data().type || 'unknown';
+                    typeCount[type] = (typeCount[type] || 0) + 1;
+                  });
+                  
+                  console.log('Breakdown by type:');
+                  Object.entries(typeCount).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+                    console.log(`  ${type}: ${count}`);
+                  });
+                }
               }
               
               process.exit(0);
@@ -150,7 +138,7 @@ jobs:
         env:
           GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Read analytics_daily/2026-10-21 document
+      - name: Read analytics_daily documents (2026-10-22 through 2026-10-26)
         run: |
           cat > read-daily.js << 'EOF'
           const admin = require('firebase-admin');
@@ -165,24 +153,27 @@ jobs:
           db.settings({ databaseId: 'barthon' });
           
           async function readDaily() {
-            try {
-              console.log('=== analytics_daily/2026-10-21 ===');
-              const dailyDoc = await db.collection('analytics_daily').doc('2026-10-21').get();
-              
-              if (dailyDoc.exists) {
-                console.log(JSON.stringify(dailyDoc.data(), null, 2));
-              } else {
-                console.log('Document does not exist');
+            const dates = ['2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26'];
+            
+            for (const date of dates) {
+              try {
+                console.log(`\n=== analytics_daily/${date} ===`);
+                const dailyDoc = await db.collection('analytics_daily').doc(date).get();
+                
+                if (dailyDoc.exists) {
+                  console.log(JSON.stringify(dailyDoc.data(), null, 2));
+                } else {
+                  console.log('Document does not exist');
+                }
+              } catch (error) {
+                console.error(`Error reading analytics_daily/${date}:`, error.message);
+                if (error.code === 7) {
+                  console.error('⚠️  Permission denied. Required IAM role: roles/datastore.user or roles/owner');
+                }
               }
-              
-              process.exit(0);
-            } catch (error) {
-              console.error('Error reading analytics_daily:', error.message);
-              if (error.code === 7) {
-                console.error('⚠️  Permission denied. Required IAM role: roles/datastore.user or roles/owner');
-              }
-              process.exit(0);
             }
+            
+            process.exit(0);
           }
           
           readDaily();
@@ -192,7 +183,7 @@ jobs:
         env:
           GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Read stats/2026-10-21 document
+      - name: Read stats documents (2026-10-22 through 2026-10-26)
         run: |
           cat > read-stats.js << 'EOF'
           const admin = require('firebase-admin');
@@ -207,24 +198,27 @@ jobs:
           db.settings({ databaseId: 'barthon' });
           
           async function readStats() {
-            try {
-              console.log('=== stats/2026-10-21 ===');
-              const statsDoc = await db.collection('stats').doc('2026-10-21').get();
-              
-              if (statsDoc.exists) {
-                console.log(JSON.stringify(statsDoc.data(), null, 2));
-              } else {
-                console.log('Document does not exist');
+            const dates = ['2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25', '2026-10-26'];
+            
+            for (const date of dates) {
+              try {
+                console.log(`\n=== stats/${date} ===`);
+                const statsDoc = await db.collection('stats').doc(date).get();
+                
+                if (statsDoc.exists) {
+                  console.log(JSON.stringify(statsDoc.data(), null, 2));
+                } else {
+                  console.log('Document does not exist');
+                }
+              } catch (error) {
+                console.error(`Error reading stats/${date}:`, error.message);
+                if (error.code === 7) {
+                  console.error('⚠️  Permission denied. Required IAM role: roles/datastore.user or roles/owner');
+                }
               }
-              
-              process.exit(0);
-            } catch (error) {
-              console.error('Error reading stats:', error.message);
-              if (error.code === 7) {
-                console.error('⚠️  Permission denied. Required IAM role: roles/datastore.user or roles/owner');
-              }
-              process.exit(0);
             }
+            
+            process.exit(0);
           }
           
           readStats();
@@ -234,11 +228,38 @@ jobs:
         env:
           GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Read Cloud Functions logs (2026-10-21 23:00 to 2026-10-22 00:30 UTC)
+      - name: Read Cloud Functions aggregation logs (nightly runs for 2026-10-22 through 2026-10-26)
         run: |
-          echo "=== Cloud Functions logs between 2026-10-21T23:00:00Z and 2026-10-22T00:30:00Z ==="
+          echo "=== Aggregation logs for Taipei days 2026-10-22 through 2026-10-26 ==="
+          echo ""
+          
+          # 每日彙總函式在 UTC 23:00-00:30 執行 (Taipei 隔天早上 07:00-08:30)
+          # Taipei 日期 D 的彙總在 D T23:00Z 至 D+1 T00:30Z 執行
+          # 檢查 2026-10-22 至 2026-10-26 的 Taipei 日期對應的夜間執行窗口
+          
+          DATES=("2026-10-22" "2026-10-23" "2026-10-24" "2026-10-25" "2026-10-26")
+          START_TIMES=("2026-10-22T23:00:00Z" "2026-10-23T23:00:00Z" "2026-10-24T23:00:00Z" "2026-10-25T23:00:00Z" "2026-10-26T23:00:00Z")
+          END_TIMES=("2026-10-23T00:30:00Z" "2026-10-24T00:30:00Z" "2026-10-25T00:30:00Z" "2026-10-26T00:30:00Z" "2026-10-27T00:30:00Z")
+          
+          for i in "${!DATES[@]}"; do
+            date="${DATES[$i]}"
+            start_time="${START_TIMES[$i]}"
+            end_time="${END_TIMES[$i]}"
+            echo "--- Aggregation run for Taipei day $date ($start_time to $end_time) ---"
+            gcloud logging read \
+              "(resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\") AND timestamp>=\"$start_time\" AND timestamp<=\"$end_time\"" \
+              --limit=100 \
+              --format=json \
+              --project=barthon-watch \
+              2>&1 || echo "⚠️  gcloud logging read failed for $date window"
+            echo ""
+          done
+
+      - name: Read Firestore permission-denied and error logs (since 2026-10-25T09:00:00Z)
+        run: |
+          echo "=== Firestore permission-denied / error logs since 2026-10-25T09:00:00Z ==="
           gcloud logging read \
-            '(resource.type="cloud_function" OR resource.type="cloud_run_revision") AND timestamp>="2026-10-21T23:00:00Z" AND timestamp<="2026-10-22T00:30:00Z"' \
+            '(protoPayload.status.message=~"PERMISSION_DENIED" OR severity>=ERROR) AND timestamp>="2026-10-25T09:00:00Z"' \
             --limit=200 \
             --format=json \
             --project=barthon-watch \
