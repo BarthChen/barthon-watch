@@ -234,18 +234,17 @@ jobs:
           echo ""
           
           # 每日彙總函式在 UTC 23:00-00:30 執行 (Taipei 隔天早上 07:00-08:30)
+          # Taipei 日期 D 的彙總在 D T23:00Z 至 D+1 T00:30Z 執行
           # 檢查 2026-10-22 至 2026-10-26 的 Taipei 日期對應的夜間執行窗口
           
-          WINDOWS=(
-            "2026-10-22:2026-10-21T23:00:00Z:2026-10-22T00:30:00Z"
-            "2026-10-23:2026-10-22T23:00:00Z:2026-10-23T00:30:00Z"
-            "2026-10-24:2026-10-23T23:00:00Z:2026-10-24T00:30:00Z"
-            "2026-10-25:2026-10-24T23:00:00Z:2026-10-25T00:30:00Z"
-            "2026-10-26:2026-10-25T23:00:00Z:2026-10-26T00:30:00Z"
-          )
+          DATES=("2026-10-22" "2026-10-23" "2026-10-24" "2026-10-25" "2026-10-26")
+          START_TIMES=("2026-10-22T23:00:00Z" "2026-10-23T23:00:00Z" "2026-10-24T23:00:00Z" "2026-10-25T23:00:00Z" "2026-10-26T23:00:00Z")
+          END_TIMES=("2026-10-23T00:30:00Z" "2026-10-24T00:30:00Z" "2026-10-25T00:30:00Z" "2026-10-26T00:30:00Z" "2026-10-27T00:30:00Z")
           
-          for window in "${WINDOWS[@]}"; do
-            IFS=':' read -r date start_time end_time <<< "$window"
+          for i in "${!DATES[@]}"; do
+            date="${DATES[$i]}"
+            start_time="${START_TIMES[$i]}"
+            end_time="${END_TIMES[$i]}"
             echo "--- Aggregation run for Taipei day $date ($start_time to $end_time) ---"
             gcloud logging read \
               "(resource.type=\"cloud_function\" OR resource.type=\"cloud_run_revision\") AND timestamp>=\"$start_time\" AND timestamp<=\"$end_time\"" \
@@ -260,7 +259,7 @@ jobs:
         run: |
           echo "=== Firestore permission-denied / error logs since 2026-10-25T09:00:00Z ==="
           gcloud logging read \
-            'protoPayload.status.message=~"PERMISSION_DENIED" OR severity>=ERROR AND timestamp>="2026-10-25T09:00:00Z"' \
+            '(protoPayload.status.message=~"PERMISSION_DENIED" OR severity>=ERROR) AND timestamp>="2026-10-25T09:00:00Z"' \
             --limit=200 \
             --format=json \
             --project=barthon-watch \
