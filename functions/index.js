@@ -11,6 +11,13 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 // 初始化 Admin SDK (自動偵測 named database 'barthon' 需在呼叫時指定)
 const app = initializeApp();
 
+// 建立 Firestore 實例並設定忽略 undefined 屬性(安全網)
+function getDb() {
+  const db = getFirestore(app, 'barthon');
+  db.settings({ ignoreUndefinedProperties: true });
+  return db;
+}
+
 // Taipei 時區偏移 (UTC+8)
 const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000;
 
@@ -29,7 +36,7 @@ export const aggregateAnalytics = onSchedule({
   region: 'asia-east1',
   memory: '512MiB'
 }, async (event) => {
-  const db = getFirestore(app, 'barthon');
+  const db = getDb();
   
   // 前一天的 Taipei 日期
   const yesterday = new Date(Date.now() + TAIPEI_OFFSET_MS - 24 * 60 * 60 * 1000);
@@ -109,7 +116,13 @@ export const aggregateAnalytics = onSchedule({
       productStats[id].uniqueVisitors.add(e.visitorId);
     });
     const topProducts = Object.values(productStats)
-      .map(p => ({ ...p, uniqueVisitors: p.uniqueVisitors.size, uniqueVisitorsSet: undefined }))
+      .map(p => ({
+        watchId: p.watchId,
+        watchBrand: p.watchBrand,
+        watchModel: p.watchModel,
+        clicks: p.clicks,
+        uniqueVisitors: p.uniqueVisitors.size
+      }))
       .sort((a, b) => b.clicks - a.clicks)
       .slice(0, 30);
 
@@ -159,7 +172,7 @@ export const getDailySummary = onRequest({
     return res.status(204).send('');
   }
 
-  const db = getFirestore(app, 'barthon');
+  const db = getDb();
   const dateParam = req.query.date || '';
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
@@ -180,34 +193,56 @@ export const getDailySummary = onRequest({
   try {
     const docSnap = await db.collection('analytics_daily').doc(dateParam).get();
     
-    // 如果已有彙總文件,直接回傳
+    // 計算 Taipei 今天的日期字串
+    const nowTaipei = new Date(Date.now() + TAIPEI_OFFSET_MS);
+    const todayTaipei = nowTaipei.getUTCFullYear() + '-' +
+                        String(nowTaipei.getUTCMonth() + 1).padStart(2, '0') + '-' +
+                        String(nowTaipei.getUTCDate()).padStart(2, '0');
+    
+    // 計算該日期的 Taipei 日終時間戳(次日 00:00 Asia/Taipei = 當日 T16:00Z)
+    const [y, m, d] = dateParam.split('-').map(Number);
+    const dateTaipeiEnd = new Date(Date.UTC(y, m - 1, d + 1, 0, 0, 0) - TAIPEI_OFFSET_MS);
+    const dateEndTimestampMs = dateTaipeiEnd.getTime();
+    
+    // Bug C: 檢查已存在文件是否過期(updatedAt < 該日期結束時間)
+    let needRecompute = false;
     if (docSnap.exists) {
       const data = docSnap.data();
-      return res.status(200).json({
-        date: data.date,
-        timezone: data.timezone,
-        uniqueVisitors: data.uniqueVisitors || 0,
-        pageViews: data.pageViews || 0,
-        uniquePageSessions: data.uniqueSessions || 0,
-        topProducts: (data.topProducts || []).map(p => ({
-          id: p.watchId,
-          brand: p.watchBrand,
-          model: p.watchModel,
-          slug: p.watchId,
-          uniqueVisitors: p.uniqueVisitors,
-          clicks: p.clicks
-        })),
-        topPages: (data.topPages || []).map(p => ({
-          path: p.path,
-          uniqueVisitors: p.uniqueVisitors,
-          views: p.views
-        })),
-        excluded: data.excluded || { bots: 0, duplicates: 0, other: 0 }
-      });
+      const updatedAtMs = data.updatedAt ? data.updatedAt.toMillis() : 0;
+      
+      if (updatedAtMs < dateEndTimestampMs) {
+        needRecompute = true;
+        console.log(`[getDailySummary] Existing doc for ${dateParam} is stale (updatedAt < day-end), recomputing...`);
+      } else {
+        // 文件新鮮,直接回傳
+        return res.status(200).json({
+          date: data.date,
+          timezone: data.timezone,
+          uniqueVisitors: data.uniqueVisitors || 0,
+          pageViews: data.pageViews || 0,
+          uniquePageSessions: data.uniqueSessions || 0,
+          topProducts: (data.topProducts || []).map(p => ({
+            id: p.watchId,
+            brand: p.watchBrand,
+            model: p.watchModel,
+            slug: p.watchId,
+            uniqueVisitors: p.uniqueVisitors,
+            clicks: p.clicks
+          })),
+          topPages: (data.topPages || []).map(p => ({
+            path: p.path,
+            uniqueVisitors: p.uniqueVisitors,
+            views: p.views
+          })),
+          excluded: data.excluded || { bots: 0, duplicates: 0, other: 0 }
+        });
+      }
     }
 
-    // Fallback:文件不存在(排程未跑或當天資料),即時計算
-    console.log(`[getDailySummary] No daily doc for ${dateParam}, computing on-the-fly...`);
+    // Fallback:文件不存在或已過期,即時計算
+    if (!needRecompute) {
+      console.log(`[getDailySummary] No daily doc for ${dateParam}, computing on-the-fly...`);
+    }
     
     // 讀取該日期所有事件
     const eventsSnap = await db.collection('analytics_events')
@@ -308,9 +343,13 @@ export const getDailySummary = onRequest({
       updatedAt: Timestamp.now()
     };
 
-    // 寫入 analytics_daily(避免下次重複計算)
-    await db.collection('analytics_daily').doc(dateParam).set(summary);
-    console.log(`[getDailySummary] Computed and saved ${dateParam}: ${pageViews} views, ${uniqueVisitors} visitors`);
+    // Bug B: 只在非今日才寫入 analytics_daily(避免固化部分數據)
+    if (dateParam !== todayTaipei) {
+      await db.collection('analytics_daily').doc(dateParam).set(summary);
+      console.log(`[getDailySummary] Computed and saved ${dateParam}: ${pageViews} views, ${uniqueVisitors} visitors`);
+    } else {
+      console.log(`[getDailySummary] Computed ${dateParam} (today), NOT persisted: ${pageViews} views, ${uniqueVisitors} visitors`);
+    }
 
     return res.status(200).json({
       date: summary.date,
