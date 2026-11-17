@@ -11,11 +11,14 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 // 初始化 Admin SDK (自動偵測 named database 'barthon' 需在呼叫時指定)
 const app = initializeApp();
 
-// 建立 Firestore 實例並設定忽略 undefined 屬性(安全網)
+// Firestore 實例(module scope 快取,settings 只呼叫一次)
+let _db = null;
 function getDb() {
-  const db = getFirestore(app, 'barthon');
-  db.settings({ ignoreUndefinedProperties: true });
-  return db;
+  if (!_db) {
+    _db = getFirestore(app, 'barthon');
+    _db.settings({ ignoreUndefinedProperties: true });
+  }
+  return _db;
 }
 
 // Taipei 時區偏移 (UTC+8)
@@ -343,12 +346,14 @@ export const getDailySummary = onRequest({
       updatedAt: Timestamp.now()
     };
 
-    // Bug B: 只在非今日才寫入 analytics_daily(避免固化部分數據)
-    if (dateParam !== todayTaipei) {
+    // Bug B: 只在過去日期才寫入 analytics_daily(避免固化部分數據或未來日期)
+    if (dateParam < todayTaipei) {
       await db.collection('analytics_daily').doc(dateParam).set(summary);
       console.log(`[getDailySummary] Computed and saved ${dateParam}: ${pageViews} views, ${uniqueVisitors} visitors`);
-    } else {
+    } else if (dateParam === todayTaipei) {
       console.log(`[getDailySummary] Computed ${dateParam} (today), NOT persisted: ${pageViews} views, ${uniqueVisitors} visitors`);
+    } else {
+      console.log(`[getDailySummary] Computed ${dateParam} (future date), NOT persisted: ${pageViews} views, ${uniqueVisitors} visitors`);
     }
 
     return res.status(200).json({
